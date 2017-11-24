@@ -1,0 +1,19 @@
+{
+  "name": "brown-data",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "lint": "eslint src"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^2.1.4",
+    "promise": "^8.0.1",
+    "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.8.0",
+    "lodash": "^4.17.4"
+  }
+}
