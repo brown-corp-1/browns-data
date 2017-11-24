@@ -1,12 +1,9 @@
 {
-  "name": "brown-data",
+  "name": "browns-data",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "clean": "rimraf build && mkdir build",
-    "js": "uglifyjs index.js -m -o build/index.js",
-    "build": "npm run clean && npm run js",
     "lint": "eslint src"
   },
   "author": "",
