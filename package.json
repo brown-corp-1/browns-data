@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "index": "./bin/index"
+  },
   "scripts": {
-    "start": "node index.js",
     "lint": "eslint src"
   },
+  "files": [
+    "index.js",
+    "bin"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
