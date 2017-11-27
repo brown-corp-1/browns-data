@@ -4,11 +4,11 @@
 const Promise = require('promise');
 
 module.exports = {
-    getCabWithOwners: getCabWithOwners,
-    getCabsWithOwners: getCabsWithOwners,
-    getOwners: getOwners,
-    getRelatedUsers: getRelatedUsers,
-    getCarsByOwner: getCarsByOwner
+    getCabWithOwners,
+    getCabsWithOwners,
+    getOwners,
+    getRelatedUsers,
+    getCarsByOwner
 };
 
 function getCabWithOwners(plate) {

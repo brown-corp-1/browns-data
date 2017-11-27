@@ -7,17 +7,17 @@ const uuid = require('uuid');
 const mongo = require('mongodb');
 const resourcesFolder = './public/resources/';
 const util = require('../helper/util');
-const typeOfTransaction = require('./transaction.constant').typeOfTransaction;
+const { typeOfTransaction } = require('./transaction.constant');
 
 module.exports = {
-    get: get,
-    add: add,
-    remove: remove,
-    addMany: addMany,
-    getRecord: getRecord,
-    saveImages: saveImages,
-    getBalance: getBalance,
-    getUsersBalance: getUsersBalance
+    get,
+    add,
+    remove,
+    addMany,
+    getRecord,
+    saveImages,
+    getBalance,
+    getUsersBalance
 };
 
 function get(plate, userId, admin, pageNumber, pageSize) {

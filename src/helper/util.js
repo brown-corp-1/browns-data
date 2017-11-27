@@ -4,7 +4,7 @@
 const fs = require('fs');
 
 module.exports = {
-    createFolder: createFolder
+    createFolder
 };
 
 function createFolder(folder) {
