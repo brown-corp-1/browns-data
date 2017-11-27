@@ -1,8 +1,8 @@
 const config = require('../../config');
 
 module.exports = {
-    error: error,
-    info: info
+    error,
+    info
 };
 
 function error(res, errorMessage, errorCode) {

@@ -4,12 +4,12 @@
 const Promise = require('promise');
 
 module.exports = {
-    get: get,
-    getDrivers: getDriver,
-    login: login,
-    setCurrentCab: setCurrentCab,
-    getCurrentDriversPerCab: getCurrentDriversPerCab,
-    getCurrentManagers: getCurrentManagers
+    get,
+    getDriver,
+    login,
+    setCurrentCab,
+    getCurrentDriversPerCab,
+    getCurrentManagers
 };
 
 function get(userId) {

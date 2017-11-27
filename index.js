@@ -1,9 +1,42 @@
+const MongoClient = require('mongodb').MongoClient;
+const config = require('./config');
+
 // @helpers
-export logger from './src/helper/logger';
-export util from './src/helper/util';
+const logger = require('./src/helper/logger');
+const util = require('./src/helper/util');
 // @constants
-export transactionConstant from './src/transaction/transaction.constant';
+const transactionConstant = require('./src/transaction/transaction.constant');
 // @ models
-export cabModel from './src/cab/cab.model';
-export transactionModel from './src/transaction/transaction.model';
-export userModel from './src/user/user.model';
+const cabModel = require('./src/cab/cab.model');
+const transactionModel = require('./src/transaction/transaction.model');
+const userModel = require('./src/user/user.model');
+
+module.exports = {
+    init,
+    logger,
+    util,
+    transactionConstant,
+    cabModel,
+    transactionModel,
+    userModel
+};
+
+function init(options) {
+    let newConfig = config;
+
+    if (options !== null && typeof options === 'object') {
+        newConfig = Object.assign(config, options);
+    }
+
+    return new Promise((resolve, reject) => {
+        MongoClient.connect(newConfig.db, (err, database) => {
+            if (err) {
+                return reject('Mongo: cannot connect', err);
+            }
+
+            global.db = database;
+
+            return resolve('Connected');
+        });
+    });
+}
