@@ -1,11 +1,8 @@
-/**
- * Created by fabian.moreno on 14/07/2017.
- */
-const fs = require('fs');
-
 module.exports = {
     createFolder
 };
+
+const fs = require('fs');
 
 function createFolder(folder) {
     if (!fs.existsSync(folder)) {
