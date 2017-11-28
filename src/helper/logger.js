@@ -1,9 +1,9 @@
-const config = require('../../config');
-
 module.exports = {
     error,
     info
 };
+
+const config = require('../../config');
 
 function error(res, errorMessage, errorCode) {
     if (config.debug) {
