@@ -1,6 +1,6 @@
 module.exports = {
     get,
-    getDriver,
+    getDrivers,
     login,
     setCurrentCab,
     getCurrentDriversPerCab,
@@ -53,7 +53,7 @@ function login(userId, password) {
     });
 }
 
-function getDriver() {
+function getDrivers() {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
