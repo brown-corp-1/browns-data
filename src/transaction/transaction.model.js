@@ -1,24 +1,22 @@
-/**
- * Created by fabian.moreno on 14/07/2017.
- */
+module.exports = {
+    get,
+    add,
+    remove,
+    addMany,
+    getRecord,
+    saveImages,
+    getBalance,
+    getUsersBalance,
+    getUnnotifiedTransactions
+};
+
 const Promise = require('promise');
 const fs = require('fs');
 const uuid = require('uuid');
 const mongo = require('mongodb');
 const resourcesFolder = './public/resources/';
 const util = require('../helper/util');
-const typeOfTransaction = require('./transaction.constant').typeOfTransaction;
-
-module.exports = {
-    get: get,
-    add: add,
-    remove: remove,
-    addMany: addMany,
-    getRecord: getRecord,
-    saveImages: saveImages,
-    getBalance: getBalance,
-    getUsersBalance: getUsersBalance
-};
+const { typeOfTransaction } = require('./transaction.constant');
 
 function get(plate, userId, admin, pageNumber, pageSize) {
     return new Promise((resolve, reject) => {
@@ -315,6 +313,35 @@ function _getLastRecord(plate, userId) {
                 if (err) { return reject(err); }
 
                 return resolve(result[0]);
+            });
+    });
+}
+
+function getUnnotifiedTransactions() {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .find({
+                active: true,
+                sent: false
+            },
+            {
+                owner: 1,
+                admin: 1,
+                type: 1,
+                date: 1,
+                value: 1,
+                driver: 1,
+                description: 1,
+                driverSaving: 1,
+                lstImages: 1,
+                target: 1,
+                from: 1
+            })
+            .limit(100)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+
+                return resolve(result);
             });
     });
 }

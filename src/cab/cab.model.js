@@ -1,15 +1,13 @@
-/**
- * Created by fabian.moreno on 14/07/2017.
- */
-const Promise = require('promise');
-
 module.exports = {
-    getCabWithOwners: getCabWithOwners,
-    getCabsWithOwners: getCabsWithOwners,
-    getOwners: getOwners,
-    getRelatedUsers: getRelatedUsers,
-    getCarsByOwner: getCarsByOwner
+    getCabWithOwners,
+    getCabsWithOwners,
+    getOwners,
+    getRelatedUsers,
+    getCarsByOwner,
+    getCabsInformation
 };
+
+const Promise = require('promise');
 
 function getCabWithOwners(plate) {
     return new Promise((resolve, reject) => {
@@ -181,6 +179,24 @@ function getRelatedUsers(plate) {
             ])
             .sort({firstName: 1, lastName: 1})
             .toArray((err, result) => {
+                if (err) { return reject(err); }
+
+                return resolve(result);
+            });
+    });
+}
+
+function getCabsInformation(ids) {
+    return new Promise((resolve, reject) => {
+        db.collection('cabs')
+            .find({
+                plate: { $in: ids }
+            },
+            {
+                _id: 0,
+                plate: 1,
+                photo: 1
+            }).toArray((err, result) => {
                 if (err) { return reject(err); }
 
                 return resolve(result);

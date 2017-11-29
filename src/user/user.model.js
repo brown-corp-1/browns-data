@@ -1,16 +1,14 @@
-/**
- * Created by fabian.moreno on 14/07/2017.
- */
-const Promise = require('promise');
-
 module.exports = {
-    get: get,
-    getDrivers: getDriver,
-    login: login,
-    setCurrentCab: setCurrentCab,
-    getCurrentDriversPerCab: getCurrentDriversPerCab,
-    getCurrentManagers: getCurrentManagers
+    get,
+    getDrivers,
+    login,
+    setCurrentCab,
+    getCurrentDriversPerCab,
+    getCurrentManagers,
+    getUsersInformation
 };
+
+const Promise = require('promise');
 
 function get(userId) {
     return new Promise((resolve, reject) => {
@@ -55,7 +53,7 @@ function login(userId, password) {
     });
 }
 
-function getDriver() {
+function getDrivers() {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
@@ -147,6 +145,27 @@ function getCurrentManagers(plate) {
                 }
             )
             .sort({firstName: 1})
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+
+                return resolve(result);
+            });
+    });
+}
+
+function getUsersInformation(ids) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find({
+                id: { $in: ids }
+            },
+            {
+                _id: 0,
+                id: 1,
+                firstName: 1,
+                lastName: 1,
+                photo: 1
+            })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
 
