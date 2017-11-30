@@ -16,7 +16,7 @@ const uuid = require('uuid');
 const mongo = require('mongodb');
 const resourcesFolder = './public/resources/';
 const util = require('../helper/util');
-const { typeOfTransaction } = require('./transaction.constant');
+const {typeOfTransaction} = require('./transaction.constant');
 
 function get(plate, userId, admin, pageNumber, pageSize) {
     return new Promise((resolve, reject) => {
@@ -72,17 +72,34 @@ function get(plate, userId, admin, pageNumber, pageSize) {
                         date: 1,
                         value: 1,
                         description: 1,
-                        driverPhoto: '$driver.photo',
                         driverSaving: 1,
-                        targetPhoto: '$target.photo',
-                        fromPhoto: '$from.photo'
+                        driver: {
+                            id: '$driver.id',
+                            firstName: '$driver.firstName',
+                            lastName: '$driver.lastName',
+                            photo: '$driver.photo'
+                        },
+                        target: {
+                            id: '$target.id',
+                            firstName: '$target.firstName',
+                            lastName: '$target.lastName',
+                            photo: '$target.photo'
+                        },
+                        from: {
+                            id: '$from.id',
+                            firstName: '$from.firstName',
+                            lastName: '$from.lastName',
+                            photo: '$from.photo'
+                        }
                     }
                 }
             ])
             .skip(pageSize * (pageNumber - 1))
             .limit(pageSize)
             .toArray((err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
 
                 return resolve(result);
             });
@@ -92,10 +109,81 @@ function get(plate, userId, admin, pageNumber, pageSize) {
 function getRecord(transactionId) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .find({_id: new mongo.ObjectID(transactionId)})
+            .aggregate([
+                {
+                    $match: {
+                        _id: new mongo.ObjectID(transactionId)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'driver',
+                        foreignField: 'id',
+                        as: 'driver'
+                    }
+                },
+                {
+                    $unwind: {path: '$driver', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'target',
+                        foreignField: 'id',
+                        as: 'target'
+                    }
+                },
+                {
+                    $unwind: {path: '$target', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'from',
+                        foreignField: 'id',
+                        as: 'from'
+                    }
+                },
+                {
+                    $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        plate: 1,
+                        type: 1,
+                        date: 1,
+                        value: 1,
+                        lstImages: 1,
+                        description: 1,
+                        driverSaving: 1,
+                        driver: {
+                            id: '$driver.id',
+                            firstName: '$driver.firstName',
+                            lastName: '$driver.lastName',
+                            photo: '$driver.photo'
+                        },
+                        target: {
+                            id: '$target.id',
+                            firstName: '$target.firstName',
+                            lastName: '$target.lastName',
+                            photo: '$target.photo'
+                        },
+                        from: {
+                            id: '$from.id',
+                            firstName: '$from.firstName',
+                            lastName: '$from.lastName',
+                            photo: '$from.photo'
+                        }
+                    }
+                }
+            ])
             .limit(1)
             .toArray((err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
                 return resolve(result[0]);
             });
     });
@@ -105,7 +193,9 @@ function add(transaction) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .insert(transaction, (err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
                 return resolve(result);
             });
     });
@@ -129,7 +219,9 @@ function remove(transactionId) {
                         active: false
                     }
                 }, (err, result) => {
-                    if (err) { return reject(err); }
+                    if (err) {
+                        return reject(err);
+                    }
                     return resolve(result);
                 });
     });
@@ -139,7 +231,9 @@ function addMany(transactions) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .insertMany(transactions, (err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
                 return resolve(result);
             });
     });
@@ -264,7 +358,9 @@ function getUsersBalance(plate, users, admin) {
                         total: '$total'
                     }
                 }, (err, result) => {
-                    if (err) { return reject(err); }
+                    if (err) {
+                        return reject(err);
+                    }
 
                     return resolve(result);
                 });
@@ -292,7 +388,9 @@ function _getBalanceTotal(plate, userId, type, admin, isSaving) {
                         }
                     }
                 }, (err, result) => {
-                    if (err) { return reject(err); }
+                    if (err) {
+                        return reject(err);
+                    }
 
                     return resolve(result[0]);
                 });
@@ -310,7 +408,9 @@ function _getLastRecord(plate, userId) {
             .limit(1)
             .sort({date: -1})
             .toArray((err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
 
                 return resolve(result[0]);
             });
@@ -320,26 +420,30 @@ function _getLastRecord(plate, userId) {
 function getUnnotifiedTransactions() {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .find({
-                active: true,
-                sent: false
-            },
-            {
-                owner: 1,
-                admin: 1,
-                type: 1,
-                date: 1,
-                value: 1,
-                driver: 1,
-                description: 1,
-                driverSaving: 1,
-                lstImages: 1,
-                target: 1,
-                from: 1
-            })
+            .find(
+                {
+                    active: true,
+                    sent: false
+                },
+                {
+                    owner: 1,
+                    admin: 1,
+                    type: 1,
+                    plate: 1,
+                    date: 1,
+                    value: 1,
+                    driver: 1,
+                    description: 1,
+                    driverSaving: 1,
+                    lstImages: 1,
+                    target: 1,
+                    from: 1
+                })
             .limit(100)
             .toArray((err, result) => {
-                if (err) { return reject(err); }
+                if (err) {
+                    return reject(err);
+                }
 
                 return resolve(result);
             });
