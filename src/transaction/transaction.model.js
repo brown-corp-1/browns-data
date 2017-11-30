@@ -278,41 +278,56 @@ function saveImages(plate, images, imagesPath) {
 
 function getBalance(plate, userId, admin) {
     return new Promise((resolve, reject) => {
-        _getBalanceTotal(plate, userId, typeOfTransaction.QUOTA, admin)
-            .then((deposits) => {
-                _getBalanceTotal(plate, userId, typeOfTransaction.EXPENSE, admin)
-                    .then((expenses) => {
-                        _getBalanceTotal(plate, userId, typeOfTransaction.CASH_OUT, admin)
-                            .then((cashOut) => {
-                                _getBalanceTotal(plate, userId, typeOfTransaction.CASH_IN, admin)
-                                    .then((cashIn) => {
-                                        _getBalanceTotal(plate, userId, typeOfTransaction.QUOTA, admin, true)
-                                            .then((savings) => {
-                                                _getLastRecord(plate, userId)
-                                                    .then((lastRecord) => {
-                                                        let balance = {
-                                                            deposits: deposits ? deposits.total : 0,
-                                                            expenses: expenses ? expenses.total : 0,
-                                                            cashOut: cashOut ? cashOut.total : 0,
-                                                            cashIn: cashIn ? cashIn.total : 0,
-                                                            savings: savings ? savings.total : 0,
-                                                            lastUpdate: lastRecord ? lastRecord.date : '1900-01-01'
-                                                        };
+        db.collection('transactions')
+            .aggregate(
+                {
+                    $sort: {date: -1}
+                },
+                {
+                    $match: {
+                        plate: plate,
+                        owner: userId,
+                        admin: admin,
+                        type: {
+                            $in: [
+                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
+                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
+                        },
+                        active: true
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            plate: '$plate',
+                            type: '$type',
+                            owner: '$owner'
+                        },
+                        lastUpdate: {$first: '$date'},
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
+                        total: {
+                            $sum: '$value'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        userId: '$_id.owner',
+                        type: '$_id.type',
+                        lastUpdate: '$lastUpdate',
+                        savings: '$driverSaving',
+                        total: '$total'
+                    }
+                }, (err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
 
-                                                        balance.total = balance.deposits + balance.cashIn -
-                                                            balance.expenses - balance.cashOut + balance.savings;
-                                                        return resolve(balance);
-                                                    });
-                                            })
-                                            .catch(reject);
-                                    })
-                                    .catch(reject);
-                            })
-                            .catch(reject);
-                    })
-                    .catch(reject);
-            })
-            .catch(reject);
+                    return resolve(util.arrrayBalanceToObject(result));
+                });
     });
 }
 
@@ -404,56 +419,55 @@ function getUnnotifiedTransactions() {
     });
 }
 
-function getTotalBalance() {
-
-}
-
-function _getBalanceTotal(plate, userId, type, admin, isSaving) {
+function getTotalBalance(userId, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .aggregate(
                 {
+                    $sort: {date: -1}
+                },
+                {
                     $match: {
-                        plate: plate,
                         owner: userId,
-                        type: type,
                         admin: admin,
+                        type: {
+                            $in: [
+                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
+                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
+                        },
                         active: true
                     }
                 },
                 {
                     $group: {
-                        _id: '$plate',
+                        _id: {
+                            type: '$type',
+                            owner: '$owner'
+                        },
+                        lastUpdate: {$first: '$date'},
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
                         total: {
-                            $sum: isSaving ? '$driverSaving' : '$value'
+                            $sum: '$value'
                         }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        userId: '$_id.owner',
+                        type: '$_id.type',
+                        lastUpdate: '$lastUpdate',
+                        savings: '$driverSaving',
+                        total: '$total'
                     }
                 }, (err, result) => {
                     if (err) {
                         return reject(err);
                     }
 
-                    return resolve(result[0]);
+                    return resolve(util.arrrayBalanceToObject(result));
                 });
-    });
-}
-
-function _getLastRecord(plate, userId) {
-    return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .find({
-                plate: plate,
-                owner: userId,
-                active: true
-            })
-            .limit(1)
-            .sort({date: -1})
-            .toArray((err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                return resolve(result[0]);
-            });
     });
 }
