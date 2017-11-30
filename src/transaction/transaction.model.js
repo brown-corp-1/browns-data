@@ -6,6 +6,7 @@ module.exports = {
     getRecord,
     saveImages,
     getBalance,
+    getTotalBalance,
     getUsersBalance,
     getUnnotifiedTransactions
 };
@@ -152,9 +153,12 @@ function getRecord(transactionId) {
                     $project: {
                         _id: 1,
                         plate: 1,
+                        owner: 1,
+                        admin: 1,
                         type: 1,
                         date: 1,
                         value: 1,
+                        parentId: 1,
                         lstImages: 1,
                         description: 1,
                         driverSaving: 1,
@@ -367,6 +371,43 @@ function getUsersBalance(plate, users, admin) {
     });
 }
 
+function getUnnotifiedTransactions() {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .find(
+                {
+                    active: true,
+                    sent: false
+                },
+                {
+                    owner: 1,
+                    admin: 1,
+                    type: 1,
+                    plate: 1,
+                    date: 1,
+                    value: 1,
+                    driver: 1,
+                    description: 1,
+                    driverSaving: 1,
+                    lstImages: 1,
+                    target: 1,
+                    from: 1
+                })
+            .limit(100)
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(result);
+            });
+    });
+}
+
+function getTotalBalance() {
+
+}
+
 function _getBalanceTotal(plate, userId, type, admin, isSaving) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
@@ -413,39 +454,6 @@ function _getLastRecord(plate, userId) {
                 }
 
                 return resolve(result[0]);
-            });
-    });
-}
-
-function getUnnotifiedTransactions() {
-    return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .find(
-                {
-                    active: true,
-                    sent: false
-                },
-                {
-                    owner: 1,
-                    admin: 1,
-                    type: 1,
-                    plate: 1,
-                    date: 1,
-                    value: 1,
-                    driver: 1,
-                    description: 1,
-                    driverSaving: 1,
-                    lstImages: 1,
-                    target: 1,
-                    from: 1
-                })
-            .limit(100)
-            .toArray((err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                return resolve(result);
             });
     });
 }
