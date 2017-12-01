@@ -8,6 +8,7 @@ module.exports = {
     getBalance,
     getTotalBalance,
     getUsersBalance,
+    getTotalUsersBalance,
     getUnnotifiedTransactions
 };
 
@@ -468,6 +469,89 @@ function getTotalBalance(userId, admin) {
                     }
 
                     return resolve(util.arrrayBalanceToObject(result));
+                });
+    });
+}
+
+function getTotalUsersBalance(userIds, admin) {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .aggregate(
+                {
+                    $sort: {date: -1}
+                },
+                {
+                    $match: {
+                        owner: {$in: userIds},
+                        admin: admin,
+                        type: {
+                            $in: [
+                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
+                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
+                        },
+                        active: true
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            type: '$type',
+                            owner: '$owner'
+                        },
+                        lastUpdate: {$first: '$date'},
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
+                        total: {
+                            $sum: '$value'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        userId: '$_id.owner',
+                        type: '$_id.type',
+                        lastUpdate: '$lastUpdate',
+                        savings: '$driverSaving',
+                        total: '$total'
+                    }
+                }, (err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    let balances = {};
+
+                    userIds.forEach((userId) => {
+                        const userBalances = result.filter((balance) => balance.userId === userId);
+
+                        if (userBalances && userBalances.length) {
+                            const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
+                            const expenses = userBalances.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
+                            const cashOut = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
+                            const cashIn = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
+
+                            balances[userId] = {
+                                deposits: deposits && deposits.total ? deposits.total : 0,
+                                expenses: expenses && expenses.total ? expenses.total : 0,
+                                cashOut: cashOut && cashOut.total ? cashOut.total : 0,
+                                cashIn: cashIn && cashIn.total ? cashIn.total : 0,
+                                savings: deposits && deposits.savings ? deposits.savings : 0,
+                                lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
+                            };
+                        } else {
+                            balances[userId] = {
+                                deposits: 0,
+                                expenses: 0,
+                                cashOut: 0,
+                                cashIn: 0,
+                                savings: 0,
+                                lastUpdate: new Date()
+                            }
+                        }
+                    });
+
+                    return resolve(balances);
                 });
     });
 }
