@@ -4,8 +4,9 @@ const config = require('./config');
 // @helpers
 const logger = require('./src/helper/logger');
 const util = require('./src/helper/util');
+const job = require('./src/helper/job');
 // @constants
-const { typeOfTransaction } = require('./src/transaction/transaction.constant');
+const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 // @ models
 const cabModel = require('./src/cab/cab.model');
 const transactionModel = require('./src/transaction/transaction.model');
@@ -35,6 +36,7 @@ function init(options) {
             }
 
             global.db = database;
+            job.init();
 
             return resolve('Connected');
         });
