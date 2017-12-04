@@ -407,7 +407,8 @@ function getUnnotifiedTransactions() {
                     driverSaving: 1,
                     lstImages: 1,
                     target: 1,
-                    from: 1
+                    from: 1,
+                    balance: 1
                 })
             .limit(100)
             .toArray((err, result) => {
@@ -539,6 +540,8 @@ function getTotalUsersBalance(userIds, admin) {
                                 savings: deposits && deposits.savings ? deposits.savings : 0,
                                 lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
                             };
+
+                            balances[userId].total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;
                         } else {
                             balances[userId] = {
                                 deposits: 0,
@@ -546,6 +549,7 @@ function getTotalUsersBalance(userIds, admin) {
                                 cashOut: 0,
                                 cashIn: 0,
                                 savings: 0,
+                                total: 0,
                                 lastUpdate: new Date()
                             }
                         }
