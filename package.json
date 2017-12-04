@@ -4,16 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "dev": "node index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "mongodb": "^2.1.4",
+    "nodemailer": "^4.0.1",
     "promise": "^8.0.1",
+    "mongodb-backup": "^1.6.9",
+    "mongodb-restore": "^1.6.2",
     "uuid": "^3.1.0"
   },
   "devDependencies": {
-    "eslint": "^4.8.0"
+    "eslint": "^4.8.0",
+    "nodemon": "^1.8.1"
   }
 }
