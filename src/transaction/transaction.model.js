@@ -333,7 +333,7 @@ function getBalance(plate, userId, admin) {
     });
 }
 
-function getUsersBalance(plate, users, admin) {
+function getUsersBalance(plate, userIds, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .aggregate(
@@ -343,7 +343,7 @@ function getUsersBalance(plate, users, admin) {
                 {
                     $match: {
                         plate: plate,
-                        owner: {$in: users},
+                        owner: {$in: userIds},
                         admin: admin,
                         type: {
                             $in: [
@@ -383,7 +383,7 @@ function getUsersBalance(plate, users, admin) {
                         return reject(err);
                     }
 
-                    return resolve(result);
+                    return resolve(util.balancesToUsers(userIds, result));
                 });
     });
 }
@@ -522,42 +522,8 @@ function getTotalUsersBalance(userIds, admin) {
                     if (err) {
                         return reject(err);
                     }
-                    let balances = {};
 
-                    userIds.forEach((userId) => {
-                        const userBalances = result.filter((balance) => balance.userId === userId);
-
-                        if (userBalances && userBalances.length) {
-                            const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
-                            const expenses = userBalances.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
-                            const cashOut = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
-                            const cashIn = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
-
-                            balances[userId] = {
-                                deposits: deposits && deposits.total ? deposits.total : 0,
-                                expenses: expenses && expenses.total ? expenses.total : 0,
-                                cashOut: cashOut && cashOut.total ? cashOut.total : 0,
-                                cashIn: cashIn && cashIn.total ? cashIn.total : 0,
-                                savings: deposits && deposits.savings ? deposits.savings : 0,
-                                lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
-                            };
-
-                            balances[userId].total = balances[userId].deposits + balances[userId].cashIn +
-                                balances[userId].savings - balances[userId].cashOut - balances[userId].expenses;
-                        } else {
-                            balances[userId] = {
-                                deposits: 0,
-                                expenses: 0,
-                                cashOut: 0,
-                                cashIn: 0,
-                                savings: 0,
-                                total: 0,
-                                lastUpdate: new Date()
-                            }
-                        }
-                    });
-
-                    return resolve(balances);
+                    return resolve(util.balancesToUsers(userIds, result));
                 });
     });
 }
