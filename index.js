@@ -7,7 +7,7 @@ const util = require('./src/helper/util');
 const job = require('./src/helper/job');
 // @constants
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
-// @ models
+// @models
 const cabModel = require('./src/cab/cab.model');
 const transactionModel = require('./src/transaction/transaction.model');
 const userModel = require('./src/user/user.model');
