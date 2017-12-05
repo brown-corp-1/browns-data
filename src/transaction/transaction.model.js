@@ -541,7 +541,8 @@ function getTotalUsersBalance(userIds, admin) {
                                 lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
                             };
 
-                            balances[userId].total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;
+                            balances[userId].total = balances[userId].deposits + balances[userId].cashIn +
+                                balances[userId].savings - balances[userId].cashOut - balances[userId].expenses;
                         } else {
                             balances[userId] = {
                                 deposits: 0,
