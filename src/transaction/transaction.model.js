@@ -9,7 +9,8 @@ module.exports = {
     getTotalBalance,
     getUsersBalance,
     getTotalUsersBalance,
-    getUnnotifiedTransactions
+    getUnnotifiedTransactions,
+    updateUnnotifiedTransactions
 };
 
 const Promise = require('promise');
@@ -558,5 +559,35 @@ function getTotalUsersBalance(userIds, admin) {
 
                     return resolve(balances);
                 });
+    });
+}
+
+function updateUnnotifiedTransactions(transactionIds) {
+    let ids = [];
+
+    transactionIds.forEach((id) => {
+        ids.push(new mongo.ObjectID(id));
+    });
+
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .updateMany(
+                {
+                    _id: {
+                        $in: ids
+                    }
+                },
+                {
+                    $set: {
+                        sent: true
+                    }
+                },
+                (err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    resolve(true);
+                }
+            );
     });
 }
