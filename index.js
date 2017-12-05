@@ -19,7 +19,8 @@ module.exports = {
     typeOfTransaction,
     cabModel,
     transactionModel,
-    userModel
+    userModel,
+    job
 };
 
 function init(options) {
