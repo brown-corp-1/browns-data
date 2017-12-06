@@ -17,7 +17,7 @@ const Promise = require('promise');
 const fs = require('fs');
 const uuid = require('uuid');
 const mongo = require('mongodb');
-const resourcesFolder = './public/resources/';
+const resourcesFolder = 'public/resources/';
 const util = require('../helper/util');
 const {typeOfTransaction} = require('./transaction.constant');
 
@@ -548,7 +548,7 @@ function updateUnnotifiedTransactions(transactionIds) {
                         sent: true
                     }
                 },
-                (err, result) => {
+                (err) => {
                     if (err) {
                         return reject(err);
                     }
