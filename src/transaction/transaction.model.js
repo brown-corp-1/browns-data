@@ -548,7 +548,7 @@ function updateUnnotifiedTransactions(transactionIds) {
                         sent: true
                     }
                 },
-                (err, result) => {
+                (err) => {
                     if (err) {
                         return reject(err);
                     }

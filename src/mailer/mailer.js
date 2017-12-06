@@ -1,7 +1,7 @@
 module.exports = {
     sendBackup: sendBackup
 };
-//TODO: Move to mailer project
+// TODO: Move to mailer project
 const nodemailer = require('nodemailer');
 const config = require('../../config');
 
