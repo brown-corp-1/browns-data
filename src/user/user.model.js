@@ -107,12 +107,11 @@ function getCurrentDriversPerCab(plate) {
                     }
                 },
                 {
+                    _id: 0,
                     id: 1,
                     firstName: 1,
                     lastName: 1,
-                    photo: 1,
-                    roles: 1,
-                    email: 1
+                    photo: 1
                 }
             )
             .sort({firstName: 1})
@@ -140,8 +139,7 @@ function getCurrentManagers(plate) {
                     id: 1,
                     firstName: 1,
                     lastName: 1,
-                    photo: 1,
-                    roles: 1
+                    photo: 1
                 }
             )
             .sort({firstName: 1})

@@ -26,6 +26,7 @@ function arrrayBalanceToObject(balanceArray) {
         savings: deposits && deposits.savings ? deposits.savings : 0,
         lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
     };
+
     balance.total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;
 
     return balance;
@@ -64,7 +65,7 @@ function balancesToUsers(userIds, result) {
                 savings: 0,
                 total: 0,
                 lastUpdate: new Date()
-            }
+            };
         }
     });
 
