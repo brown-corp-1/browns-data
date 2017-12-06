@@ -3,7 +3,6 @@ module.exports = {
 };
 //TODO: Move to mailer project
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 const config = require('../../config');
 
 // create reusable transporter object using the default SMTP transport
