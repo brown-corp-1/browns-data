@@ -52,7 +52,7 @@ function makeBackup() {
     }
 }
 
-function restoreBackup(dir, filename) {
+function restoreBackup(dir, filename, callback) {
     logger.info('restore backup - BROWN');
     const root = config.backupFolder + '/' + dir;
 
@@ -63,6 +63,10 @@ function restoreBackup(dir, filename) {
         drop: true,
         callback: (msg) => {
             logger.info('Restore status', msg);
+
+            if (callback) {
+                callback();
+            }
         }
     });
 }
