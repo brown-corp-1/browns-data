@@ -409,7 +409,8 @@ function getUnnotifiedTransactions() {
                     lstImages: 1,
                     target: 1,
                     from: 1,
-                    balance: 1
+                    balance: 1,
+                    localBalance: 1
                 })
             .limit(100)
             .toArray((err, result) => {
