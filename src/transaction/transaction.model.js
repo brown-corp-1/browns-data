@@ -8,9 +8,7 @@ module.exports = {
     getBalance,
     getTotalBalance,
     getUsersBalance,
-    getTotalUsersBalance,
-    getUnnotifiedTransactions,
-    updateUnnotifiedTransactions
+    getTotalUsersBalance
 };
 
 const Promise = require('promise');
@@ -208,27 +206,55 @@ function add(transaction) {
 }
 
 function remove(transactionId) {
+    const queryCondition = {
+        $or: [
+            {
+                _id: new mongo.ObjectID(transactionId)
+            },
+            {
+                parentId: new mongo.ObjectID(transactionId)
+            }
+        ]
+    };
+
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .updateMany(
+                queryCondition,
                 {
-                    $or: [
-                        {
-                            _id: new mongo.ObjectID(transactionId)
-                        },
-                        {
-                            parentId: new mongo.ObjectID(transactionId)
-                        }
-                    ]
-                }, {
                     $set: {
                         active: false
                     }
-                }, (err, result) => {
+                }, (err) => {
                     if (err) {
                         return reject(err);
                     }
-                    return resolve(result);
+
+                    // return deleted transactions
+                    db.collection('transactions')
+                        .find(
+                            queryCondition,
+                            {
+                                owner: 1,
+                                admin: 1,
+                                type: 1,
+                                plate: 1,
+                                date: 1,
+                                value: 1,
+                                driver: 1,
+                                description: 1,
+                                driverSaving: 1,
+                                lstImages: 1,
+                                target: 1,
+                                from: 1
+                            })
+                        .toArray((err, result) => {
+                            if (err) {
+                                return reject(err);
+                            }
+
+                            return resolve(result);
+                        });
                 });
     });
 }
@@ -388,41 +414,6 @@ function getUsersBalance(plate, userIds, admin) {
     });
 }
 
-function getUnnotifiedTransactions() {
-    return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .find(
-                {
-                    active: true,
-                    sent: false
-                },
-                {
-                    owner: 1,
-                    admin: 1,
-                    type: 1,
-                    plate: 1,
-                    date: 1,
-                    value: 1,
-                    driver: 1,
-                    description: 1,
-                    driverSaving: 1,
-                    lstImages: 1,
-                    target: 1,
-                    from: 1,
-                    balance: 1,
-                    localBalance: 1
-                })
-            .limit(100)
-            .toArray((err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                return resolve(result);
-            });
-    });
-}
-
 function getTotalBalance(userId, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
@@ -526,35 +517,5 @@ function getTotalUsersBalance(userIds, admin) {
 
                     return resolve(util.balancesToUsers(userIds, result));
                 });
-    });
-}
-
-function updateUnnotifiedTransactions(transactionIds) {
-    let ids = [];
-
-    transactionIds.forEach((id) => {
-        ids.push(new mongo.ObjectID(id));
-    });
-
-    return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .updateMany(
-                {
-                    _id: {
-                        $in: ids
-                    }
-                },
-                {
-                    $set: {
-                        sent: true
-                    }
-                },
-                (err) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    resolve(true);
-                }
-            );
     });
 }
