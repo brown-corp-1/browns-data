@@ -7,8 +7,10 @@ const util = require('./src/helper/util');
 const job = require('./src/helper/job');
 // @constants
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
+const {emailState} = require('./src/email/email.constant');
 // @models
 const cabModel = require('./src/cab/cab.model');
+const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
 const userModel = require('./src/user/user.model');
 
@@ -20,6 +22,8 @@ module.exports = {
     cabModel,
     transactionModel,
     userModel,
+    emailModel,
+    emailState,
     job
 };
 
