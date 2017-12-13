@@ -40,9 +40,11 @@ function getUnsent() {
                     target: 1,
                     from: 1,
                     balance: 1,
+                    state: 1,
+                    oldValue: 1,
                     localBalance: 1
                 })
-            .limit(1000)
+            .limit(100)
             .toArray((err, result) => {
                 if (err) {
                     return reject(err);
@@ -53,20 +55,12 @@ function getUnsent() {
     });
 }
 
-function updateUnsent(emailIds) {
-    let ids = [];
-
-    emailIds.forEach((id) => {
-        ids.push(new mongo.ObjectID(id));
-    });
-
+function updateUnsent(id) {
     return new Promise((resolve, reject) => {
         db.collection('emails')
-            .updateMany(
+            .updateOne(
                 {
-                    _id: {
-                        $in: ids
-                    }
+                    _id: new mongo.ObjectID(id)
                 },
                 {
                     $set: {
