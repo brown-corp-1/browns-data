@@ -55,20 +55,12 @@ function getUnsent() {
     });
 }
 
-function updateUnsent(emailIds) {
-    let ids = [];
-
-    emailIds.forEach((id) => {
-        ids.push(new mongo.ObjectID(id));
-    });
-
+function updateUnsent(id) {
     return new Promise((resolve, reject) => {
         db.collection('emails')
-            .updateMany(
+            .updateOne(
                 {
-                    _id: {
-                        $in: ids
-                    }
+                    _id: new mongo.ObjectID(id)
                 },
                 {
                     $set: {
