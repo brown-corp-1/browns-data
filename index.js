@@ -41,7 +41,10 @@ function init(options) {
             }
 
             global.db = database;
-            job.init();
+
+            if (newConfig.makeBackup) {
+                job.init();
+            }
 
             return resolve('Connected');
         });
