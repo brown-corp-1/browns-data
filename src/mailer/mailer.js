@@ -5,14 +5,6 @@ module.exports = {
 const nodemailer = require('nodemailer');
 const config = require('../../config');
 
-// create reusable transporter object using the default SMTP transport
-let transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth
-});
-
 function sendBackup(backup) {
     const date = new Date();
 
@@ -31,6 +23,17 @@ function _send(to, subject, data, template, attachments) {
         if (attachments && attachments.length) {
             mailOptions.attachments = attachments;
         }
+
+        // create reusable transporter object using the default SMTP transport
+        let transporter = nodemailer.createTransport({
+            host: 'smtp.sendgrid.net',
+            port: 465,
+            secure: true,
+            auth: {
+                user: 'apikey',
+                pass: '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'
+            }
+        });
 
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
