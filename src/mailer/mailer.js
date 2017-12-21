@@ -7,13 +7,10 @@ const config = require('../../config');
 
 // create reusable transporter object using the default SMTP transport
 let transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // secure:true for port 465, secure:false for port 587
-    auth: {
-        user: 'brown.corp.contact@gmail.com',
-        pass: '10Million$'
-    }
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.auth
 });
 
 function sendBackup(backup) {
@@ -26,7 +23,7 @@ function sendBackup(backup) {
 function _send(to, subject, data, template, attachments) {
     return new Promise((resolve, reject) => {
         let mailOptions = {
-            from: '"Brown Corp" <brown.corp.contact@gmail.com>',
+            from: config.from,
             to: to,
             subject: subject
         };
@@ -35,13 +32,11 @@ function _send(to, subject, data, template, attachments) {
             mailOptions.attachments = attachments;
         }
 
-        if (!config.debug) {
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    return reject(error);
-                }
-                return resolve(info.messageId, info.response);
-            });
-        }
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return reject(error);
+            }
+            return resolve(info.messageId, info.response);
+        });
     });
 }
