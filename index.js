@@ -37,7 +37,7 @@ function init(options) {
     return new Promise((resolve, reject) => {
         MongoClient.connect(newConfig.db, (err, database) => {
             if (err) {
-                return reject('Mongo: cannot connect', err);
+                return reject('Mongo: cannot connect: ', err);
             }
 
             global.db = database;
