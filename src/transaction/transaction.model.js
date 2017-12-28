@@ -17,7 +17,6 @@ const uuid = require('uuid');
 const mongo = require('mongodb');
 const resourcesFolder = 'public/resources/';
 const util = require('../helper/util');
-const {typeOfTransaction} = require('./transaction.constant');
 
 function get(plate, userId, admin, pageNumber, pageSize) {
     return new Promise((resolve, reject) => {
@@ -316,11 +315,6 @@ function getBalance(plate, userId, admin) {
                         plate: plate,
                         owner: userId,
                         admin: admin,
-                        type: {
-                            $in: [
-                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
-                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
-                        },
                         active: true
                     }
                 },
@@ -371,11 +365,6 @@ function getUsersBalance(plate, userIds, admin) {
                         plate: plate,
                         owner: {$in: userIds},
                         admin: admin,
-                        type: {
-                            $in: [
-                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
-                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
-                        },
                         active: true
                     }
                 },
@@ -425,11 +414,6 @@ function getTotalBalance(userId, admin) {
                     $match: {
                         owner: userId,
                         admin: admin,
-                        type: {
-                            $in: [
-                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
-                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
-                        },
                         active: true
                     }
                 },
@@ -478,11 +462,6 @@ function getTotalUsersBalance(userIds, admin) {
                     $match: {
                         owner: {$in: userIds},
                         admin: admin,
-                        type: {
-                            $in: [
-                                typeOfTransaction.QUOTA, typeOfTransaction.EXPENSE,
-                                typeOfTransaction.CASH_OUT, typeOfTransaction.CASH_IN]
-                        },
                         active: true
                     }
                 },

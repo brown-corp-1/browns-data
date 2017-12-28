@@ -18,13 +18,23 @@ function arrrayBalanceToObject(balanceArray) {
     const expenses = balanceArray.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
     const cashOut = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
     const cashIn = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
+    const peekAndPlate = balanceArray.find((balance) => balance.type === typeOfTransaction.PEAK_AND_PLATE) || {};
+    const stranded = balanceArray.find((balance) => balance.type === typeOfTransaction.STRANDED) || {};
+
     let balance = {
         deposits: deposits && deposits.total ? deposits.total : 0,
         expenses: expenses && expenses.total ? expenses.total : 0,
         cashOut: cashOut && cashOut.total ? cashOut.total : 0,
         cashIn: cashIn && cashIn.total ? cashIn.total : 0,
         savings: deposits && deposits.savings ? deposits.savings : 0,
-        lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
+        lastUpdate: new Date(
+            Math.max(
+                deposits.lastUpdate || 0,
+                expenses.lastUpdate || 0,
+                cashOut.lastUpdate || 0,
+                cashIn.lastUpdate || 0,
+                peekAndPlate.lastUpdate || 0,
+                stranded.lastUpdate || 0))
     };
 
     balance.total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;
@@ -43,13 +53,23 @@ function balancesToUsers(userIds, result) {
             const expenses = userBalances.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
             const cashOut = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
             const cashIn = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
+            const peekAndPlate = userBalances.find((balance) => balance.type === typeOfTransaction.PEAK_AND_PLATE) || {};
+            const stranded = userBalances.find((balance) => balance.type === typeOfTransaction.STRANDED) || {};
+
             let userBalance = {
                 deposits: deposits && deposits.total ? deposits.total : 0,
                 expenses: expenses && expenses.total ? expenses.total : 0,
                 cashOut: cashOut && cashOut.total ? cashOut.total : 0,
                 cashIn: cashIn && cashIn.total ? cashIn.total : 0,
                 savings: deposits && deposits.savings ? deposits.savings : 0,
-                lastUpdate: new Date(Math.max(deposits.lastUpdate || 0, expenses.lastUpdate || 0, cashOut.lastUpdate || 0, cashIn.lastUpdate || 0))
+                lastUpdate: new Date(
+                    Math.max(
+                        deposits.lastUpdate || 0,
+                        expenses.lastUpdate || 0,
+                        cashOut.lastUpdate || 0,
+                        cashIn.lastUpdate || 0,
+                        peekAndPlate.lastUpdate || 0,
+                        stranded.lastUpdate || 0))
             };
 
             userBalance.total = userBalance.deposits + userBalance.cashIn + userBalance.savings -
