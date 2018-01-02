@@ -46,7 +46,16 @@ function init(options) {
                 job.init();
             }
 
+            userModel.get(39751856)
+                .then((result) => {
+                    console.log('result', result);
+                })
+                .catch((e) => {
+                    console.log('Errrorrr', e);
+                });
+
             return resolve('Connected');
         });
     });
 }
+init();
