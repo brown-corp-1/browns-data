@@ -35,9 +35,9 @@ Browns-data manages API's data
       storage:
           dbPath: c:\data\db
       net:
-         port: 27017	
+          port: 27017	
       security:
-        authorization: "enabled"
+          authorization: "enabled"
   ```
   
   > * Install the MongoDB service
@@ -51,7 +51,7 @@ Browns-data manages API's data
   > * Start the MongoDB service
   
   ```sh
-       net start MongoDB
+      net start MongoDB
   ```  
   
 ## Quick Start
