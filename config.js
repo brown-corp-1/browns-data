@@ -1,5 +1,5 @@
 module.exports = {
-    db: 'mongodb://127.0.0.1:27017/cabsManager',
+    db: 'mongodb://adminBrown:abc123@localhost:27017/cabsManager?authSource=admin',
     backupFolder: './backups',
     debug: true,
     makeBackup: false
