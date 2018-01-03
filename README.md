@@ -5,7 +5,6 @@ Browns-data manages API's data
 * [1. Requirements](#requirements)
 * [2. Installation Notes](#installation-notes)
 * [3. Quick Start](#quick-start)
-* [4. Development](#development)
 
 ## Requirements
 
@@ -71,12 +70,7 @@ Browns-data manages API's data
     ```
 
 1. Run dev
-
-    _Note_
-    > Make sure you have run mongod, usually, it's on the path: C:\Program Files\MongoDB\Server\3.4\bin
     
     ```sh
     run npm dev
     ```
-    
-    The site will be available on localhost:4000
