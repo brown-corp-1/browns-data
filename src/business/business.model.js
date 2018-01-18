@@ -1,38 +1,49 @@
 module.exports = {
-    getCabWithOwners,
-    getCabsWithOwners,
+    add,
+    getBusinessWithOwners,
+    getBusinessesWithOwners,
     getOwners,
     getRelatedUsers,
-    getCarsByOwner,
-    getCabsInformation
+    getBusinessesByOwner,
+    getBusinessesInformation
 };
 
 const Promise = require('promise');
 
-function getCabWithOwners(plate) {
+function add(business) {
     return new Promise((resolve, reject) => {
-        db.collection('cabs')
+        db.collection('businesses')
+            .insertOne(
+                business,
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result.insertedId);
+                });
+    });
+}
+
+function getBusinessWithOwners(id) {
+    return new Promise((resolve, reject) => {
+        db.collection('businesses')
             .aggregate([
                 {
                     $match: {
-                        plate: plate
+                        _id: id
                     }
                 },
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'owners',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'owners'
                     }
                 },
                 {
                     $project: {
-                        _id: 0,
-                        plate: 1,
+                        name: 1,
                         photo: 1,
                         owners: {
-                            id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -48,29 +59,27 @@ function getCabWithOwners(plate) {
     });
 }
 
-function getCabsWithOwners(plates) {
+function getBusinessesWithOwners(businessIds) {
     return new Promise((resolve, reject) => {
-        db.collection('cabs')
+        db.collection('businesses')
             .aggregate([
                 {
                     $match: {
-                        plate: {$in: plates}
+                        _id: {$in: businessIds}
                     }
                 },
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'owners',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'owners'
                     }
                 },
                 {
                     $project: {
-                        _id: 0,
-                        plate: 1,
+                        name: 1,
                         owners: {
-                            id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -86,29 +95,27 @@ function getCabsWithOwners(plates) {
     });
 }
 
-function getCarsByOwner(userId) {
+function getBusinessesByOwner(userId) {
     return new Promise((resolve, reject) => {
-        db.collection('cabs')
+        db.collection('businesses')
             .aggregate([
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'owners',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'owners'
                     }
                 },
                 {
                     $match: {
-                        owners: { $in: [userId] }
+                        owners: {$in: [userId]}
                     }
                 },
                 {
                     $project: {
-                        _id: 0,
-                        plate: 1,
+                        name: 1,
                         owners: {
-                            id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -124,27 +131,26 @@ function getCarsByOwner(userId) {
     });
 }
 
-function getOwners(plate) {
+function getOwners(id) {
     return new Promise((resolve, reject) => {
-        db.collection('cabs')
+        db.collection('businesses')
             .aggregate([
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'owners',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'owners'
                     }
                 },
                 {
                     $match: {
-                        plate: plate
+                        _id: id
                     }
                 },
                 {
                     $project: {
                         owners: {
-                            id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -160,17 +166,15 @@ function getOwners(plate) {
     });
 }
 
-function getRelatedUsers(plate) {
+function getRelatedUsers(id) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .aggregate([
                 {
-                    $match: {cabs: {$in: [plate]}}
+                    $match: {businesses: {$in: [id]}}
                 },
                 {
                     $project: {
-                        _id: 0,
-                        id: 1,
                         firstName: 1,
                         lastName: 1,
                         photo: 1
@@ -186,17 +190,18 @@ function getRelatedUsers(plate) {
     });
 }
 
-function getCabsInformation(ids) {
+function getBusinessesInformation(ids) {
     return new Promise((resolve, reject) => {
-        db.collection('cabs')
-            .find({
-                plate: { $in: ids }
-            },
-            {
-                _id: 0,
-                plate: 1,
-                photo: 1
-            }).toArray((err, result) => {
+        db.collection('businesses')
+            .find(
+                {
+                    _id: {$in: ids}
+                },
+                {
+                    name: 1,
+                    photo: 1
+                })
+            .toArray((err, result) => {
                 if (err) { return reject(err); }
 
                 return resolve(result);

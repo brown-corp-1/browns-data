@@ -9,7 +9,7 @@ const job = require('./src/helper/job');
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 const {emailState} = require('./src/email/email.constant');
 // @models
-const cabModel = require('./src/cab/cab.model');
+const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
 const userModel = require('./src/user/user.model');
@@ -19,7 +19,7 @@ module.exports = {
     logger,
     util,
     typeOfTransaction,
-    cabModel,
+    businessModel,
     transactionModel,
     userModel,
     emailModel,
