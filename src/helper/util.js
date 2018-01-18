@@ -1,6 +1,6 @@
 module.exports = {
     createFolder,
-    arrrayBalanceToObject,
+    arrayBalanceToObject,
     balancesToUsers
 };
 
@@ -13,7 +13,7 @@ function createFolder(folder) {
     }
 }
 
-function arrrayBalanceToObject(balanceArray) {
+function arrayBalanceToObject(balanceArray) {
     const deposits = balanceArray.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
     const expenses = balanceArray.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
     const cashOut = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
@@ -46,7 +46,7 @@ function balancesToUsers(userIds, result) {
     let balances = {};
 
     userIds.forEach((userId) => {
-        const userBalances = result.filter((balance) => balance.userId === userId);
+        const userBalances = result.filter((balance) => balance.userId.toString() === userId.toString());
 
         if (userBalances && userBalances.length) {
             const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};

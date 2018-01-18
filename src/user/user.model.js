@@ -1,9 +1,13 @@
 module.exports = {
+    add,
+    addBusiness,
+    addManagedBusiness,
+    exist,
     get,
     getDrivers,
     login,
-    setCurrentCab,
-    getCurrentDriversPerCab,
+    setCurrentBusiness,
+    getCurrentDriversPerBusiness,
     getCurrentManagers,
     getUsersInformation
 };
@@ -15,10 +19,9 @@ function get(userId) {
         db.collection('users')
             .find(
                 {
-                    id: userId
+                    _id: userId
                 },
                 {
-                    _id: 0,
                     password: 0
                 })
             .limit(1)
@@ -29,16 +32,32 @@ function get(userId) {
     });
 }
 
+function exist(email) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find(
+                {
+                    email: email
+                },
+                {}
+            )
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+                return resolve(result.length);
+            });
+    });
+}
+
 function login(userId, password) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    id: userId,
+                    email: userId,
                     password: password
                 },
                 {
-                    id: 1,
                     firstName: 1,
                     lastName: 1,
                     photo: 1,
@@ -53,6 +72,24 @@ function login(userId, password) {
     });
 }
 
+function add(firstName, lastName, email, password) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .insertOne(
+                {
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    password: password,
+                    managed: []
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result);
+                });
+    });
+}
+
 function getDrivers() {
     return new Promise((resolve, reject) => {
         db.collection('users')
@@ -63,7 +100,7 @@ function getDrivers() {
                     }
                 },
                 {
-                    id: 1,
+                    _id: 1,
                     firstName: 1,
                     lastName: 1,
                     photo: 1
@@ -76,17 +113,19 @@ function getDrivers() {
     });
 }
 
-function setCurrentCab(userId, plate) {
+function setCurrentBusiness(userId, businessId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
-            .update(
-                {id: userId},
+            .updateOne(
+                {
+                    _id: userId
+                },
                 {
                     $set: {
-                        currentCab: plate
+                        currentBusiness: businessId
                     },
                     $addToSet: {
-                        cabs: plate
+                        businesses: businessId
                     }
                 },
                 (err, result) => {
@@ -96,19 +135,57 @@ function setCurrentCab(userId, plate) {
     });
 }
 
-function getCurrentDriversPerCab(plate) {
+function addBusiness(users, businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateMany(
+                {
+                    _id: { $in: users}
+                },
+                {
+                    $addToSet: {
+                        businesses: businessId,
+                        roles: 'OWNER'
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result.result);
+                });
+    });
+}
+
+function addManagedBusiness(userId, businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    _id: userId
+                },
+                {
+                    $addToSet: {
+                        managed: businessId,
+                        roles: 'MANAGER'
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result.result);
+                });
+    });
+}
+
+function getCurrentDriversPerBusiness(businessId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    currentCab: plate,
+                    currentBusiness: businessId,
                     roles: {
                         $elemMatch: {$eq: 'DRIVER'}
                     }
                 },
                 {
-                    _id: 0,
-                    id: 1,
                     firstName: 1,
                     lastName: 1,
                     photo: 1
@@ -122,7 +199,7 @@ function getCurrentDriversPerCab(plate) {
     });
 }
 
-function getCurrentManagers(plate) {
+function getCurrentManagers(businessId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
@@ -131,12 +208,10 @@ function getCurrentManagers(plate) {
                         $elemMatch: {$eq: 'MANAGER'}
                     },
                     managed: {
-                        $elemMatch: {$eq: plate}
+                        $elemMatch: {$eq: businessId}
                     }
                 },
                 {
-                    _id: 0,
-                    id: 1,
                     firstName: 1,
                     lastName: 1,
                     photo: 1
@@ -154,17 +229,16 @@ function getCurrentManagers(plate) {
 function getUsersInformation(ids) {
     return new Promise((resolve, reject) => {
         db.collection('users')
-            .find({
-                id: { $in: ids }
-            },
-            {
-                _id: 0,
-                id: 1,
-                firstName: 1,
-                lastName: 1,
-                photo: 1,
-                email: 1
-            })
+            .find(
+                {
+                    _id: { $in: ids }
+                },
+                {
+                    firstName: 1,
+                    lastName: 1,
+                    photo: 1,
+                    email: 1
+                })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
 

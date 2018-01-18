@@ -14,17 +14,16 @@ module.exports = {
 const Promise = require('promise');
 const fs = require('fs');
 const uuid = require('uuid');
-const mongo = require('mongodb');
 const resourcesFolder = 'public/resources/';
 const util = require('../helper/util');
 
-function get(plate, userId, admin, pageNumber, pageSize) {
+function get(businessId, userId, admin, pageNumber, pageSize) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .aggregate([
                 {
                     $match: {
-                        plate: plate,
+                        businessId: businessId,
                         owner: userId,
                         admin: admin,
                         active: true
@@ -34,7 +33,7 @@ function get(plate, userId, admin, pageNumber, pageSize) {
                     $lookup: {
                         from: 'users',
                         localField: 'driver',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'driver'
                     }
                 },
@@ -45,7 +44,7 @@ function get(plate, userId, admin, pageNumber, pageSize) {
                     $lookup: {
                         from: 'users',
                         localField: 'target',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'target'
                     }
                 },
@@ -56,12 +55,23 @@ function get(plate, userId, admin, pageNumber, pageSize) {
                     $lookup: {
                         from: 'users',
                         localField: 'from',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'from'
                     }
                 },
                 {
                     $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $lookup: {
+                        from: 'businesses',
+                        localField: 'businessId',
+                        foreignField: '_id',
+                        as: 'business'
+                    }
+                },
+                {
+                    $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
                 },
                 {
                     $sort: {date: -1, creationDate: -1}
@@ -73,20 +83,24 @@ function get(plate, userId, admin, pageNumber, pageSize) {
                         value: 1,
                         description: 1,
                         driverSaving: 1,
+                        business: {
+                            _id: '$business._id',
+                            name: '$business.name'
+                        },
                         driver: {
-                            id: '$driver.id',
+                            _id: '$driver._id',
                             firstName: '$driver.firstName',
                             lastName: '$driver.lastName',
                             photo: '$driver.photo'
                         },
                         target: {
-                            id: '$target.id',
+                            _id: '$target._id',
                             firstName: '$target.firstName',
                             lastName: '$target.lastName',
                             photo: '$target.photo'
                         },
                         from: {
-                            id: '$from.id',
+                            _id: '$from._id',
                             firstName: '$from.firstName',
                             lastName: '$from.lastName',
                             photo: '$from.photo'
@@ -112,14 +126,14 @@ function getRecord(transactionId) {
             .aggregate([
                 {
                     $match: {
-                        _id: new mongo.ObjectID(transactionId)
+                        _id: transactionId
                     }
                 },
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'driver',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'driver'
                     }
                 },
@@ -130,7 +144,7 @@ function getRecord(transactionId) {
                     $lookup: {
                         from: 'users',
                         localField: 'target',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'target'
                     }
                 },
@@ -141,7 +155,7 @@ function getRecord(transactionId) {
                     $lookup: {
                         from: 'users',
                         localField: 'from',
-                        foreignField: 'id',
+                        foreignField: '_id',
                         as: 'from'
                     }
                 },
@@ -149,9 +163,19 @@ function getRecord(transactionId) {
                     $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
                 },
                 {
+                    $lookup: {
+                        from: 'businesses',
+                        localField: 'businessId',
+                        foreignField: '_id',
+                        as: 'business'
+                    }
+                },
+                {
+                    $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
+                },
+                {
                     $project: {
                         _id: 1,
-                        plate: 1,
                         owner: 1,
                         admin: 1,
                         type: 1,
@@ -161,20 +185,24 @@ function getRecord(transactionId) {
                         lstImages: 1,
                         description: 1,
                         driverSaving: 1,
+                        business: {
+                            _id: '$business._id',
+                            name: '$business.name'
+                        },
                         driver: {
-                            id: '$driver.id',
+                            _id: '$driver._id',
                             firstName: '$driver.firstName',
                             lastName: '$driver.lastName',
                             photo: '$driver.photo'
                         },
                         target: {
-                            id: '$target.id',
+                            _id: '$target._id',
                             firstName: '$target.firstName',
                             lastName: '$target.lastName',
                             photo: '$target.photo'
                         },
                         from: {
-                            id: '$from.id',
+                            _id: '$from._id',
                             firstName: '$from.firstName',
                             lastName: '$from.lastName',
                             photo: '$from.photo'
@@ -208,10 +236,10 @@ function remove(transactionId) {
     const queryCondition = {
         $or: [
             {
-                _id: new mongo.ObjectID(transactionId)
+                _id: transactionId
             },
             {
-                parentId: new mongo.ObjectID(transactionId)
+                parentId: transactionId
             }
         ]
     };
@@ -237,7 +265,7 @@ function remove(transactionId) {
                                 owner: 1,
                                 admin: 1,
                                 type: 1,
-                                plate: 1,
+                                businessId: 1,
                                 date: 1,
                                 value: 1,
                                 driver: 1,
@@ -247,9 +275,9 @@ function remove(transactionId) {
                                 target: 1,
                                 from: 1
                             })
-                        .toArray((err, result) => {
-                            if (err) {
-                                return reject(err);
+                        .toArray((findErr, result) => {
+                            if (findErr) {
+                                return reject(findErr);
                             }
 
                             return resolve(result);
@@ -260,29 +288,33 @@ function remove(transactionId) {
 
 function addMany(transactions) {
     return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .insertMany(transactions, (err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-                return resolve(result);
-            });
+        if (transactions && transactions.length) {
+            db.collection('transactions')
+                .insertMany(transactions, (err, result) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(result);
+                });
+        } else {
+            return resolve({ok: 1, ops: []});
+        }
     });
 }
 
-function saveImages(plate, images, imagesPath) {
+function saveImages(businessId, images, imagesPath) {
     let lstImages = imagesPath || [];
 
     return new Promise((resolve, reject) => {
         const id = uuid.v4();
-        const cabFolder = resourcesFolder + plate;
-        const imagesFolder = cabFolder + '/images/';
+        const businessFolder = resourcesFolder + businessId;
+        const imagesFolder = businessFolder + '/images/';
         const galleyFolder = imagesFolder + id;
 
         if (images && images.length) {
             try {
                 util.createFolder(resourcesFolder);
-                util.createFolder(cabFolder);
+                util.createFolder(businessFolder);
                 util.createFolder(imagesFolder);
                 util.createFolder(galleyFolder);
 
@@ -303,7 +335,7 @@ function saveImages(plate, images, imagesPath) {
     });
 }
 
-function getBalance(plate, userId, admin) {
+function getBalance(businessId, userId, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .aggregate(
@@ -312,7 +344,7 @@ function getBalance(plate, userId, admin) {
                 },
                 {
                     $match: {
-                        plate: plate,
+                        businessId: businessId,
                         owner: userId,
                         admin: admin,
                         active: true
@@ -321,7 +353,7 @@ function getBalance(plate, userId, admin) {
                 {
                     $group: {
                         _id: {
-                            plate: '$plate',
+                            businessId: '$businessId',
                             type: '$type',
                             owner: '$owner'
                         },
@@ -348,12 +380,12 @@ function getBalance(plate, userId, admin) {
                         return reject(err);
                     }
 
-                    return resolve(util.arrrayBalanceToObject(result));
+                    return resolve(util.arrayBalanceToObject(result));
                 });
     });
 }
 
-function getUsersBalance(plate, userIds, admin) {
+function getUsersBalance(businessId, userIds, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
             .aggregate(
@@ -362,7 +394,7 @@ function getUsersBalance(plate, userIds, admin) {
                 },
                 {
                     $match: {
-                        plate: plate,
+                        businessId: businessId,
                         owner: {$in: userIds},
                         admin: admin,
                         active: true
@@ -371,7 +403,7 @@ function getUsersBalance(plate, userIds, admin) {
                 {
                     $group: {
                         _id: {
-                            plate: '$plate',
+                            businessId: '$businessId',
                             type: '$type',
                             owner: '$owner'
                         },
@@ -446,7 +478,7 @@ function getTotalBalance(userId, admin) {
                         return reject(err);
                     }
 
-                    return resolve(util.arrrayBalanceToObject(result));
+                    return resolve(util.arrayBalanceToObject(result));
                 });
     });
 }
