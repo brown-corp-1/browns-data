@@ -44,6 +44,7 @@ function getBusinessWithOwners(id) {
                         name: 1,
                         photo: 1,
                         owners: {
+                            _id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -80,6 +81,7 @@ function getBusinessesWithOwners(businessIds) {
                     $project: {
                         name: 1,
                         owners: {
+                            _id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -116,6 +118,7 @@ function getBusinessesByOwner(userId) {
                     $project: {
                         name: 1,
                         owners: {
+                            _id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -151,6 +154,7 @@ function getOwners(id) {
                 {
                     $project: {
                         owners: {
+                            _id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1
@@ -175,6 +179,7 @@ function getRelatedUsers(id) {
                 },
                 {
                     $project: {
+                        _id: 1,
                         firstName: 1,
                         lastName: 1,
                         photo: 1

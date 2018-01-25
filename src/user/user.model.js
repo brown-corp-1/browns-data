@@ -61,8 +61,7 @@ function login(userId, password) {
                     firstName: 1,
                     lastName: 1,
                     photo: 1,
-                    roles: 1,
-                    email: 1
+                    roles: 1
                 })
             .limit(1)
             .toArray((err, result) => {
@@ -100,7 +99,6 @@ function getDrivers() {
                     }
                 },
                 {
-                    _id: 1,
                     firstName: 1,
                     lastName: 1,
                     photo: 1
