@@ -42,9 +42,14 @@ function addUserToGroup(managerId, groupId, userId) {
 function find(userId) {
     return new Promise((resolve, reject) => {
         db.collection('groups')
-            .find({
-                userIds: userId
-            })
+            .find(
+                {
+                    userIds: userId
+                },
+                {
+                    name: 1,
+                    managerId: 1
+                })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
 
