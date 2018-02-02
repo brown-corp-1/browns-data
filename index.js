@@ -13,6 +13,7 @@ const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
 const userModel = require('./src/user/user.model');
+const groupModel = require('./src/group/group.model');
 
 module.exports = {
     init,
@@ -23,6 +24,7 @@ module.exports = {
     transactionModel,
     userModel,
     emailModel,
+    groupModel,
     emailState,
     job
 };
