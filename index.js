@@ -8,6 +8,8 @@ const job = require('./src/helper/job');
 // @constants
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 const {emailState} = require('./src/email/email.constant');
+const {groupConstants} = require('./src/group/group.constant');
+
 // @models
 const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
@@ -26,6 +28,7 @@ module.exports = {
     emailModel,
     groupModel,
     emailState,
+    groupConstants,
     job
 };
 
