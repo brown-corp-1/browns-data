@@ -375,7 +375,8 @@ function getBalance(businessId, userId, admin) {
                         savings: '$driverSaving',
                         total: '$total'
                     }
-                }, (err, result) => {
+                },
+                (err, result) => {
                     if (err) {
                         return reject(err);
                     }

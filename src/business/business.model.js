@@ -3,7 +3,7 @@ module.exports = {
     getBusinessWithOwners,
     getBusinessesWithOwners,
     getOwners,
-    getRelatedUsers,
+    findRelatedUsers,
     getBusinessesByOwner,
     getBusinessesInformation
 };
@@ -170,7 +170,7 @@ function getOwners(id) {
     });
 }
 
-function getRelatedUsers(id) {
+function findRelatedUsers(id) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .aggregate([
