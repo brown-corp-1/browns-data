@@ -72,17 +72,11 @@ function login(userId, password) {
     });
 }
 
-function add(firstName, lastName, email, password) {
+function add(user) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .insertOne(
-                {
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    password: password,
-                    managed: []
-                },
+                user,
                 (err, result) => {
                     if (err) { return reject(err); }
                     return resolve(result.insertedId);
@@ -132,11 +126,13 @@ function findByGroup(groupId) {
                 {
                     $project: {
                         user: {
+                            _id: 1,
                             firstName: 1,
                             lastName: 1,
                             photo: 1,
                             roles: 1,
-                            businesses: 1
+                            businesses: 1,
+                            currentBusiness: 1
                         }
                     }
                 }
