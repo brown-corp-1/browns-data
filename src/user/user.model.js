@@ -5,8 +5,9 @@ module.exports = {
     exist,
     get,
     getDrivers,
-    login,
+    findByGroup,
     setCurrentBusiness,
+    login,
     getCurrentDriversPerBusiness,
     getCurrentManagers,
     getUsersInformation
@@ -71,20 +72,14 @@ function login(userId, password) {
     });
 }
 
-function add(firstName, lastName, email, password) {
+function add(user) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .insertOne(
-                {
-                    firstName: firstName,
-                    lastName: lastName,
-                    email: email,
-                    password: password,
-                    managed: []
-                },
+                user,
                 (err, result) => {
                     if (err) { return reject(err); }
-                    return resolve(result);
+                    return resolve(result.insertedId);
                 });
     });
 }
@@ -107,6 +102,46 @@ function getDrivers() {
             .toArray((err, result) => {
                 if (err) { return reject(err); }
                 return resolve(result);
+            });
+    });
+}
+
+function findByGroup(groupId) {
+    return new Promise((resolve, reject) => {
+        db.collection('groups')
+            .aggregate([
+                {
+                    $match: {
+                        _id: groupId
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userIds',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $project: {
+                        user: {
+                            _id: 1,
+                            firstName: 1,
+                            lastName: 1,
+                            photo: 1,
+                            roles: 1,
+                            businesses: 1,
+                            currentBusiness: 1
+                        }
+                    }
+                }
+            ])
+            .limit(1)
+            .toArray((err, result) => {
+                if (err && !result.length) { return reject(err); }
+
+                return resolve(result[0].user);
             });
     });
 }
@@ -138,7 +173,7 @@ function addBusiness(users, businessId) {
         db.collection('users')
             .updateMany(
                 {
-                    _id: { $in: users}
+                    _id: {$in: users}
                 },
                 {
                     $addToSet: {
@@ -229,7 +264,7 @@ function getUsersInformation(ids) {
         db.collection('users')
             .find(
                 {
-                    _id: { $in: ids }
+                    _id: {$in: ids}
                 },
                 {
                     firstName: 1,
