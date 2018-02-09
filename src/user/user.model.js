@@ -139,7 +139,7 @@ function findByGroup(groupId) {
             ])
             .limit(1)
             .toArray((err, result) => {
-                if (err && !result.length) { return reject(err); }
+                if (err || !result.length) { return reject(err); }
 
                 return resolve(result[0].user);
             });
