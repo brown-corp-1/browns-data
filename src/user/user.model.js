@@ -4,6 +4,7 @@ module.exports = {
     addManagedBusiness,
     exist,
     get,
+    getByEmail,
     getDrivers,
     findByGroup,
     setCurrentBusiness,
@@ -29,6 +30,22 @@ function get(userId) {
             .toArray((err, result) => {
                 if (err) { return reject(err); }
                 return resolve(result[0]);
+            });
+    });
+}
+
+function getByEmail(email) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find(
+                {
+                    email: email
+                },
+                {})
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+                return resolve(result.length ? result[0] : null);
             });
     });
 }
