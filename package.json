@@ -7,9 +7,9 @@
     "lint": "eslint src",
     "dev": "node index.js"
   },
-  "pre-push": {
-    "run": "lint"
-  },
+  "pre-push": [
+    "npm run lint"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
