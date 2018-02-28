@@ -41,14 +41,32 @@ function addUserToGroup(managerId, groupId, userId) {
 
 function find(userId) {
     return new Promise((resolve, reject) => {
-        db.collection('groups')
-            .find(
+        db.collection('businessGroups')
+            .aggregate(
                 {
-                    userIds: userId
+                    $match: {
+                        userId
+                    }
                 },
                 {
-                    name: 1,
-                    managerId: 1
+                    $lookup: {
+                        from: 'groups',
+                        localField: 'groupId',
+                        foreignField: '_id',
+                        as: 'group'
+                    }
+                },
+                {
+                    $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $replaceRoot: {newRoot: '$group'}
+                },
+                {
+                    $project: {
+                        name: 1,
+                        managerId: 1
+                    }
                 })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
