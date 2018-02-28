@@ -7,6 +7,9 @@
     "lint": "eslint src",
     "dev": "node index.js"
   },
+  "pre-push": [
+    "lint"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "eslint": "^4.8.0",
-    "nodemon": "^1.8.1"
+    "nodemon": "^1.8.1",
+    "pre-push": "^0.1.1"
   }
 }
