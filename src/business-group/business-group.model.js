@@ -14,16 +14,14 @@ const Promise = require('promise');
 
 function add(userId, groupId, managedBusinessId, businessId) {
     return new Promise((resolve, reject) => {
-        let businessGroup = {
-            userId,
-            groupId,
-            managedIds: managedBusinessId ? [managedBusinessId] : [],
-            businessIds: businessId ? [businessId] : []
-        };
-
         db.collection('businessGroups')
             .insertOne(
-                businessGroup,
+                {
+                    userId,
+                    groupId,
+                    managedIds: managedBusinessId ? [managedBusinessId] : [],
+                    businessIds: businessId ? [businessId] : []
+                },
                 (err, result) => {
                     if (err) {
                         return reject(err);
