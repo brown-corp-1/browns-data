@@ -1,5 +1,5 @@
 module.exports = {
     groupConstants: {
-        DEFAULT_NAME: 'Mis negocios'
+        DEFAULT_NAME: 'Negocios de {0}'
     }
 };

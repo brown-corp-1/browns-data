@@ -3,7 +3,6 @@ module.exports = {
     getBusinessWithOwners,
     getBusinessesWithOwners,
     getOwners,
-    findRelatedUsers,
     getBusinessesByOwner,
     getBusinessesInformation
 };
@@ -166,31 +165,6 @@ function getOwners(id) {
                 if (err) { return reject(err); }
 
                 return resolve(result[0].owners);
-            });
-    });
-}
-
-function findRelatedUsers(id) {
-    return new Promise((resolve, reject) => {
-        db.collection('users')
-            .aggregate([
-                {
-                    $match: {businesses: {$in: [id]}}
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        firstName: 1,
-                        lastName: 1,
-                        photo: 1
-                    }
-                }
-            ])
-            .sort({firstName: 1, lastName: 1})
-            .toArray((err, result) => {
-                if (err) { return reject(err); }
-
-                return resolve(result);
             });
     });
 }
