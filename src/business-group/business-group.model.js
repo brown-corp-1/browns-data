@@ -77,11 +77,10 @@ function addManagedBusiness(id, businessId) {
 function get(userId, groupId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
-            .find(
-                {
-                    userId,
-                    groupId
-                })
+            .find({
+                userId,
+                groupId
+            })
             .limit(1)
             .toArray((err, result) => {
                 if (err) {
@@ -96,7 +95,7 @@ function get(userId, groupId) {
 function getCurrentDriversPerBusiness(groupId, businessId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
-            .aggregate(
+            .aggregate([
                 {
                     $match: {
                         groupId,
@@ -127,7 +126,7 @@ function getCurrentDriversPerBusiness(groupId, businessId) {
                         photo: 1
                     }
                 }
-            )
+            ])
             .sort({firstName: 1})
             .toArray((err, result) => {
                 if (err) {
@@ -141,7 +140,7 @@ function getCurrentDriversPerBusiness(groupId, businessId) {
 function getCurrentManagers(groupId, businessId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
-            .aggregate(
+            .aggregate([
                 {
                     $match: {
                         groupId,
@@ -171,7 +170,7 @@ function getCurrentManagers(groupId, businessId) {
                         photo: 1
                     }
                 }
-            )
+            ])
             .sort({firstName: 1})
             .toArray((err, result) => {
                 if (err) {
@@ -257,7 +256,8 @@ function findRelatedUsersToBusiness(groupId, businessId) {
                 {
                     $match: {
                         groupId,
-                        businessIds: {$in: [businessId]}}
+                        businessIds: {$in: [businessId]}
+                    }
                 },
                 {
                     $lookup: {

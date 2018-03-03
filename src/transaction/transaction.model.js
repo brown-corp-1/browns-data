@@ -338,7 +338,7 @@ function saveImages(businessId, images, imagesPath) {
 function getBalance(businessId, userId, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .aggregate(
+            .aggregate([
                 {
                     $sort: {date: -1}
                 },
@@ -375,21 +375,22 @@ function getBalance(businessId, userId, admin) {
                         savings: '$driverSaving',
                         total: '$total'
                     }
-                },
-                (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
 
-                    return resolve(util.arrayBalanceToObject(result));
-                });
+                return resolve(util.arrayBalanceToObject(result));
+            });
     });
 }
 
 function getUsersBalance(businessId, userIds, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .aggregate(
+            .aggregate([
                 {
                     $sort: {date: -1}
                 },
@@ -426,20 +427,22 @@ function getUsersBalance(businessId, userIds, admin) {
                         savings: '$driverSaving',
                         total: '$total'
                     }
-                }, (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
 
-                    return resolve(util.balancesToUsers(userIds, result));
-                });
+                return resolve(util.balancesToUsers(userIds, result));
+            });
     });
 }
 
 function getTotalBalance(userId, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .aggregate(
+            .aggregate([
                 {
                     $sort: {date: -1}
                 },
@@ -474,20 +477,22 @@ function getTotalBalance(userId, admin) {
                         savings: '$driverSaving',
                         total: '$total'
                     }
-                }, (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
 
-                    return resolve(util.arrayBalanceToObject(result));
-                });
+                return resolve(util.arrayBalanceToObject(result));
+            });
     });
 }
 
 function getTotalUsersBalance(userIds, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
-            .aggregate(
+            .aggregate([
                 {
                     $sort: {date: -1}
                 },
@@ -515,19 +520,21 @@ function getTotalUsersBalance(userIds, admin) {
                 },
                 {
                     $project: {
-                        _id: 0,
+                        _id: 1,
                         userId: '$_id.owner',
                         type: '$_id.type',
                         lastUpdate: '$lastUpdate',
                         savings: '$driverSaving',
                         total: '$total'
                     }
-                }, (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
 
-                    return resolve(util.balancesToUsers(userIds, result));
-                });
+                return resolve(util.balancesToUsers(userIds, result));
+            });
     });
 }

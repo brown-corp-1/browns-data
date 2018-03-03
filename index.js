@@ -43,12 +43,12 @@ function init(options) {
     }
 
     return new Promise((resolve, reject) => {
-        MongoClient.connect(newConfig.db, (err, database) => {
+        MongoClient.connect(newConfig.db, (err, client) => {
             if (err) {
                 return reject('Mongo: cannot connect: ', err);
             }
 
-            global.db = database;
+            global.db = client.db('cabsManager');
 
             if (newConfig.makeBackup) {
                 job.init();
