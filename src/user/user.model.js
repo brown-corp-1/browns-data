@@ -65,17 +65,16 @@ function exist(email) {
 function login(userId, password) {
     return new Promise((resolve, reject) => {
         db.collection('users')
-            .find(
-                {
-                    email: userId,
-                    password: password
-                },
-                {
-                    firstName: 1,
-                    lastName: 1,
-                    photo: 1,
-                    roles: 1
-                })
+            .find({
+                email: userId,
+                password: password
+            })
+            .project({
+                firstName: 1,
+                lastName: 1,
+                photo: 1,
+                roles: 1
+            })
             .limit(1)
             .toArray((err, result) => {
                 if (err) { return reject(err); }

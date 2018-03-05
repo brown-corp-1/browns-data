@@ -42,7 +42,7 @@ function addUserToGroup(managerId, groupId, userId) {
 function find(userId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
-            .aggregate(
+            .aggregate([
                 {
                     $match: {
                         userId
@@ -67,7 +67,8 @@ function find(userId) {
                         name: 1,
                         managerId: 1
                     }
-                })
+                }
+            ])
             .toArray((err, result) => {
                 if (err) { return reject(err); }
 
