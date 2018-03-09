@@ -7,6 +7,7 @@ module.exports = {
     get,
     getCurrentDriversPerBusiness,
     getCurrentManagers,
+    removeBusiness,
     setCurrentBusiness
 };
 
@@ -240,6 +241,24 @@ function findUsersByGroup(groupId) {
                 }
             ])
             .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(result);
+            });
+    });
+}
+
+function removeBusiness(userIds, groupId, businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('businessGroups')
+            .updateMany({
+                groupId,
+                userId: {$in: userIds}
+            }, {
+                $pull: {businessIds: businessId}
+            }, (err, result) => {
                 if (err) {
                     return reject(err);
                 }

@@ -1,10 +1,12 @@
 module.exports = {
     add,
+    get,
     getBusinessWithOwners,
     getBusinessesWithOwners,
     getOwners,
     getBusinessesByOwner,
-    getBusinessesInformation
+    getBusinessesInformation,
+    update
 };
 
 const Promise = require('promise');
@@ -18,6 +20,49 @@ function add(business) {
                     if (err) { return reject(err); }
                     return resolve(result.insertedId);
                 });
+    });
+}
+
+function update(businessId, name, owners) {
+    return new Promise((resolve, reject) => {
+        db.collection('businesses')
+            .updateOne(
+                {
+                    _id: businessId
+                },
+                {
+                    $set: {
+                        name,
+                        owners
+                    }
+                },
+                (err) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(true);
+                });
+    });
+}
+
+function get(id) {
+    return new Promise((resolve, reject) => {
+        db.collection('businesses')
+            .find(
+                {
+                    _id: id
+                },
+                {
+                    name: 1,
+                    owners: 1
+                })
+            .toArray((err, result) => {
+                if (err || !result.length) {
+                    return reject(err);
+                }
+
+                return resolve(result[0]);
+            });
     });
 }
 
