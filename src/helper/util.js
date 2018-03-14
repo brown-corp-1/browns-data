@@ -1,11 +1,14 @@
 module.exports = {
-    createFolder,
     arrayBalanceToObject,
-    balancesToUsers
+    balancesToUsers,
+    createFolder,
+    saveImages
 };
 
 const fs = require('fs');
 const {typeOfTransaction} = require('../transaction/transaction.constant');
+const uuid = require('uuid');
+const resourcesFolder = 'public/resources/';
 
 function createFolder(folder) {
     if (!fs.existsSync(folder)) {
@@ -90,4 +93,37 @@ function balancesToUsers(userIds, result) {
     });
 
     return balances;
+}
+
+function saveImages(entityId, images, imagesPath) {
+    let lstImages = imagesPath || [];
+
+    return new Promise((resolve, reject) => {
+        const id = uuid.v4();
+        const businessFolder = resourcesFolder + entityId;
+        const imagesFolder = businessFolder + '/images/';
+        const galleyFolder = imagesFolder + id;
+
+        if (images && images.length) {
+            try {
+                createFolder(resourcesFolder);
+                createFolder(businessFolder);
+                createFolder(imagesFolder);
+                createFolder(galleyFolder);
+
+                images.forEach((img) => {
+                    const imageId = uuid.v4();
+
+                    lstImages.push(galleyFolder.replace('public/', '') + '/' + imageId + '.png');
+                    fs.writeFileSync(galleyFolder + '/' + imageId + '.png', img.buffer);
+                });
+
+                return resolve(lstImages);
+            } catch (ex) {
+                return reject(ex);
+            }
+        } else {
+            return resolve(lstImages);
+        }
+    });
 }

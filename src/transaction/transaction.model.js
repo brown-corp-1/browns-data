@@ -4,7 +4,6 @@ module.exports = {
     remove,
     addMany,
     getRecord,
-    saveImages,
     getBalance,
     getTotalBalance,
     getUsersBalance,
@@ -12,9 +11,6 @@ module.exports = {
 };
 
 const Promise = require('promise');
-const fs = require('fs');
-const uuid = require('uuid');
-const resourcesFolder = 'public/resources/';
 const util = require('../helper/util');
 
 function get(businessId, userId, admin, pageNumber, pageSize) {
@@ -298,39 +294,6 @@ function addMany(transactions) {
                 });
         } else {
             return resolve({ok: 1, ops: []});
-        }
-    });
-}
-
-function saveImages(businessId, images, imagesPath) {
-    let lstImages = imagesPath || [];
-
-    return new Promise((resolve, reject) => {
-        const id = uuid.v4();
-        const businessFolder = resourcesFolder + businessId;
-        const imagesFolder = businessFolder + '/images/';
-        const galleyFolder = imagesFolder + id;
-
-        if (images && images.length) {
-            try {
-                util.createFolder(resourcesFolder);
-                util.createFolder(businessFolder);
-                util.createFolder(imagesFolder);
-                util.createFolder(galleyFolder);
-
-                images.forEach((img) => {
-                    const imageId = uuid.v4();
-
-                    lstImages.push(galleyFolder.replace('public/', '') + '/' + imageId + '.png');
-                    fs.writeFileSync(galleyFolder + '/' + imageId + '.png', img.buffer);
-                });
-
-                return resolve(lstImages);
-            } catch (ex) {
-                return reject(ex);
-            }
-        } else {
-            return resolve(lstImages);
         }
     });
 }
