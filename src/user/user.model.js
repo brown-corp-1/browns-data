@@ -168,7 +168,7 @@ function update(userId, firstName, lastName, password, photo, photos) {
         let data = {
             firstName,
             lastName,
-            password,
+            password
         };
 
         if (photo) {
