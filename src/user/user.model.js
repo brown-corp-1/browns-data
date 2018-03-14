@@ -4,9 +4,10 @@ module.exports = {
     get,
     getByEmail,
     getDrivers,
-    setAsDriver,
+    getUsersInformation,
     login,
-    getUsersInformation
+    setAsDriver,
+    update
 };
 
 const Promise = require('promise');
@@ -159,5 +160,39 @@ function getUsersInformation(ids) {
 
                 return resolve(result);
             });
+    });
+}
+
+function update(userId, firstName, lastName, password, photo, photos) {
+    return new Promise((resolve, reject) => {
+        let data = {
+            firstName,
+            lastName,
+            password,
+        };
+
+        if (photo) {
+            data.photo = photo;
+        }
+
+        db.collection('users')
+            .updateOne(
+                {
+                    _id: userId
+                },
+                {
+                    $set: data,
+                    $push: {
+                        photos: {
+                            $each: photos
+                        }
+                    }
+                },
+                (err) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(true);
+                });
     });
 }
