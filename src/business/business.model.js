@@ -6,6 +6,7 @@ module.exports = {
     getOwners,
     getBusinessesByOwner,
     getBusinessesInformation,
+    remove,
     update
 };
 
@@ -45,12 +46,34 @@ function update(businessId, name, owners) {
     });
 }
 
+function remove(businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('businesses')
+            .updateOne(
+                {
+                    _id: businessId
+                },
+                {
+                    $set: {
+                        active: false
+                    }
+                },
+                (err) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(true);
+                });
+    });
+}
+
 function get(id) {
     return new Promise((resolve, reject) => {
         db.collection('businesses')
             .find(
                 {
-                    _id: id
+                    _id: id,
+                    active: true
                 },
                 {
                     name: 1,
@@ -72,7 +95,8 @@ function getBusinessWithOwners(id) {
             .aggregate([
                 {
                     $match: {
-                        _id: id
+                        _id: id,
+                        active: true
                     }
                 },
                 {
@@ -110,7 +134,8 @@ function getBusinessesWithOwners(businessIds) {
             .aggregate([
                 {
                     $match: {
-                        _id: {$in: businessIds}
+                        _id: {$in: businessIds},
+                        active: true
                     }
                 },
                 {
@@ -155,7 +180,8 @@ function getBusinessesByOwner(userId) {
                 },
                 {
                     $match: {
-                        owners: {$in: [userId]}
+                        owners: {$in: [userId]},
+                        active: true
                     }
                 },
                 {
@@ -192,7 +218,8 @@ function getOwners(id) {
                 },
                 {
                     $match: {
-                        _id: id
+                        _id: id,
+                        active: true
                     }
                 },
                 {
