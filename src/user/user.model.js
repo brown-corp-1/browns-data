@@ -73,8 +73,7 @@ function login(userId, password) {
             .project({
                 firstName: 1,
                 lastName: 1,
-                photo: 1,
-                roles: 1
+                photo: 1
             })
             .limit(1)
             .toArray((err, result) => {
@@ -167,9 +166,12 @@ function update(userId, firstName, lastName, password, photo, photos) {
     return new Promise((resolve, reject) => {
         let data = {
             firstName,
-            lastName,
-            password
+            lastName
         };
+
+        if (password) {
+            data.password = password;
+        }
 
         if (photo) {
             data.photo = photo;
