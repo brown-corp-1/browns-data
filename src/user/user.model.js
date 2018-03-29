@@ -147,7 +147,8 @@ function getUsersInformation(ids) {
             .find(
                 {
                     _id: {$in: ids}
-                },
+                })
+            .project(
                 {
                     firstName: 1,
                     lastName: 1,
