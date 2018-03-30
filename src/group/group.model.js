@@ -63,6 +63,11 @@ function find(userId) {
                     $replaceRoot: {newRoot: '$group'}
                 },
                 {
+                    $sort: {
+                        name: 1
+                    }
+                },
+                {
                     $project: {
                         name: 1,
                         managerId: 1

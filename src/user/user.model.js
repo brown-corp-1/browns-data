@@ -3,7 +3,7 @@ module.exports = {
     exist,
     get,
     getByEmail,
-    getDrivers,
+    getInvite,
     getUsersInformation,
     login,
     setAsDriver,
@@ -95,23 +95,24 @@ function add(user) {
     });
 }
 
-function getDrivers() {
+function getInvite(userId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    roles: {
-                        $elemMatch: {$eq: 'DRIVER'}
-                    }
+                    _id: userId
                 },
                 {
                     firstName: 1,
                     lastName: 1,
-                    photo: 1
+                    email: 1,
+                    password: 1
                 })
-            .sort({firstName: 1})
+            .limit(1)
             .toArray((err, result) => {
                 if (err) { return reject(err); }
+
+                result[0].password = !!result[0].password;
                 return resolve(result);
             });
     });
@@ -147,7 +148,8 @@ function getUsersInformation(ids) {
             .find(
                 {
                     _id: {$in: ids}
-                },
+                })
+            .project(
                 {
                     firstName: 1,
                     lastName: 1,
