@@ -5,7 +5,6 @@ module.exports = {
     addMany,
     getRecord,
     getBalance,
-    getTotalBalance,
     getUsersBalance,
     getTotalUsersBalance
 };
@@ -402,56 +401,6 @@ function getUsersBalance(businessId, userIds, admin) {
     });
 }
 
-function getTotalBalance(userId, admin) {
-    return new Promise((resolve, reject) => {
-        db.collection('transactions')
-            .aggregate([
-                {
-                    $sort: {date: -1}
-                },
-                {
-                    $match: {
-                        owner: userId,
-                        admin: admin,
-                        active: true
-                    }
-                },
-                {
-                    $group: {
-                        _id: {
-                            type: '$type',
-                            owner: '$owner'
-                        },
-                        lastUpdate: {$first: '$date'},
-                        driverSaving: {
-                            $sum: '$driverSaving'
-                        },
-                        total: {
-                            $sum: '$value'
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,
-                        userId: '$_id.owner',
-                        type: '$_id.type',
-                        lastUpdate: '$lastUpdate',
-                        savings: '$driverSaving',
-                        total: '$total'
-                    }
-                }
-            ])
-            .toArray((err, result) => {
-                if (err) {
-                    return reject(err);
-                }
-
-                return resolve(util.arrayBalanceToObject(result));
-            });
-    });
-}
-
 function getTotalUsersBalance(userIds, admin) {
     return new Promise((resolve, reject) => {
         db.collection('transactions')
@@ -464,6 +413,22 @@ function getTotalUsersBalance(userIds, admin) {
                         owner: {$in: userIds},
                         admin: admin,
                         active: true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'businesses',
+                        localField: 'businessId',
+                        foreignField: '_id',
+                        as: 'business'
+                    }
+                },
+                {
+                    $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $match: {
+                        'business.active': true
                     }
                 },
                 {

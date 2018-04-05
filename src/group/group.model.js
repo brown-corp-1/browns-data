@@ -1,7 +1,8 @@
 module.exports = {
     add,
     addUserToGroup,
-    find
+    find,
+    update
 };
 
 const Promise = require('promise');
@@ -14,6 +15,26 @@ function add(group) {
                 (err, result) => {
                     if (err) { return reject(err); }
                     return resolve(result.insertedId);
+                });
+    });
+}
+
+function update(groupId, name) {
+    return new Promise((resolve, reject) => {
+        db.collection('groups')
+            .updateOne(
+                {
+                    _id: groupId
+                },
+                {
+                    $set: {
+                        name
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+
+                    return resolve(result.result);
                 });
     });
 }
