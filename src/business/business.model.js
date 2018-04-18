@@ -24,18 +24,24 @@ function add(business) {
     });
 }
 
-function update(businessId, name, owners) {
+function update(businessId, name, owners, photo) {
     return new Promise((resolve, reject) => {
+        let newBusiness = {
+            name,
+            owners
+        };
+
+        if (photo) {
+            newBusiness.photo = photo;
+        }
+
         db.collection('businesses')
             .updateOne(
                 {
                     _id: businessId
                 },
                 {
-                    $set: {
-                        name,
-                        owners
-                    }
+                    $set: newBusiness
                 },
                 (err) => {
                     if (err) {

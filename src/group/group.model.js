@@ -2,6 +2,7 @@ module.exports = {
     add,
     addUserToGroup,
     find,
+    remove,
     update
 };
 
@@ -29,6 +30,26 @@ function update(groupId, name) {
                 {
                     $set: {
                         name
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+
+                    return resolve(result.result);
+                });
+    });
+}
+
+function remove(groupId) {
+    return new Promise((resolve, reject) => {
+        db.collection('groups')
+            .updateOne(
+                {
+                    _id: groupId
+                },
+                {
+                    $set: {
+                        active: false
                     }
                 },
                 (err, result) => {
@@ -79,6 +100,11 @@ function find(userId) {
                 },
                 {
                     $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $match: {
+                        'group.active': true
+                    }
                 },
                 {
                     $replaceRoot: {newRoot: '$group'}
