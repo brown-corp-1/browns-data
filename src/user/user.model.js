@@ -1,16 +1,20 @@
 module.exports = {
     add,
     exist,
+    existResetToken,
     get,
     getByEmail,
     getInvite,
     getUsersInformation,
     login,
+    resetPassword,
     setAsDriver,
-    update
+    update,
+    updatePassword
 };
 
 const Promise = require('promise');
+const ObjectID = require('mongodb').ObjectID;
 
 function get(userId) {
     return new Promise((resolve, reject) => {
@@ -193,10 +197,71 @@ function update(userId, firstName, lastName, password, photo, photos) {
                     }
                 },
                 (err) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                    if (err) { return reject(err);}
+
                     return resolve(true);
                 });
+    });
+}
+
+function resetPassword(email) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    email: email
+                },
+                {
+                    $set: {
+                        resetToken: new ObjectID()
+                    }
+                },
+                (err) => {
+                    if (err) { return reject(err);}
+
+                    return resolve(true);
+                });
+    });
+}
+
+function updatePassword(resetToken, password) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    resetToken
+                },
+                {
+                    $set: {
+                        password
+                    },
+                    $unset: {
+                        resetToken: 1
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err);}
+
+                    return resolve(result);
+                });
+    });
+}
+
+function existResetToken(resetToken) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find(
+                {
+                    resetToken
+                })
+            .project({
+                email: 1
+            })
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+
+                return resolve(result && result.length ? result[0] : null);
+            });
     });
 }
