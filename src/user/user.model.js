@@ -197,9 +197,8 @@ function update(userId, firstName, lastName, password, photo, photos) {
                     }
                 },
                 (err) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                    if (err) { return reject(err);}
+
                     return resolve(true);
                 });
     });
@@ -218,9 +217,8 @@ function resetPassword(email) {
                     }
                 },
                 (err) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                    if (err) { return reject(err);}
+
                     return resolve(true);
                 });
     });
@@ -242,9 +240,8 @@ function updatePassword(resetToken, password) {
                     }
                 },
                 (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
+                    if (err) { return reject(err);}
+
                     return resolve(result);
                 });
     });
