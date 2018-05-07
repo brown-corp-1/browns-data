@@ -12,6 +12,7 @@ module.exports = {
         CASH_OUT: 5,
         CASH_IN: 6,
         INVITE: 101,
-        RESET_PASSWORD: 201
+        RESET_PASSWORD: 201,
+        WELCOME: 301
     }
 };
