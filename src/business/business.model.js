@@ -153,6 +153,9 @@ function getBusinessesWithOwners(businessIds) {
                     }
                 },
                 {
+                    $sort: {name: 1}
+                },
+                {
                     $project: {
                         name: 1,
                         owners: {
