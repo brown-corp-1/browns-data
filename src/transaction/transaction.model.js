@@ -5,6 +5,7 @@ module.exports = {
     addMany,
     getRecord,
     getBalance,
+    getUserBalancePerMonth,
     getUsersBalance,
     getTotalUsersBalance
 };
@@ -495,6 +496,60 @@ function getTotalUsersBalance(userIds, admin) {
                 }
 
                 return resolve(util.balancesToUsers(userIds, result));
+            });
+    });
+}
+
+function getUserBalancePerMonth(businessId, userId, admin) {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .aggregate([
+                {
+                    $match: {
+                        businessId,
+                        owner: userId,
+                        admin,
+                        active: true
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            businessId: '$businessId',
+                            type: '$type',
+                            owner: '$owner',
+                            month: {
+                                $month: '$date'
+                            },
+                            year: {
+                                $year: '$date'
+                            }
+                        },
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
+                        total: {
+                            $sum: '$value'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        type: '$_id.type',
+                        month: '$_id.month',
+                        year: '$_id.year',
+                        savings: '$driverSaving',
+                        total: '$total'
+                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(util.consolidateBalances(result));
             });
     });
 }

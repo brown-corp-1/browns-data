@@ -2,6 +2,7 @@ module.exports = {
     arrayBalanceToObject,
     balancesToUsers,
     createFolder,
+    consolidateBalances,
     saveImages
 };
 
@@ -14,6 +15,32 @@ function createFolder(folder) {
     if (!fs.existsSync(folder)) {
         fs.mkdirSync(folder);
     }
+}
+
+function consolidateBalances(balanceArray) {
+    let balances = {};
+
+    balanceArray.forEach((balance) => {
+        const key = balance.year + ' ' + balance.month;
+
+        if (!balances[key]) {
+            balances[key] = {};
+        }
+        if (balance.type === typeOfTransaction.QUOTA) {
+            balances[key].deposits = balance.total + balance.savings;
+        }
+        if (balance.type === typeOfTransaction.EXPENSE) {
+            balances[key].expenses = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_OUT) {
+            balances[key].cashOut = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_IN) {
+            balances[key].cashIn = balance.total;
+        }
+    });
+
+    return Object.keys(balanceArray).map((key) => balanceArray[key]);
 }
 
 function arrayBalanceToObject(balanceArray) {
