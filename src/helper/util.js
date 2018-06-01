@@ -24,8 +24,12 @@ function consolidateBalances(balanceArray) {
         const key = balance.year + ' ' + balance.month;
 
         if (!balances[key]) {
-            balances[key] = {};
+            balances[key] = {
+                year: balance.year,
+                month: balance.month
+            };
         }
+
         if (balance.type === typeOfTransaction.QUOTA) {
             balances[key].deposits = balance.total + balance.savings;
         }
@@ -40,7 +44,7 @@ function consolidateBalances(balanceArray) {
         }
     });
 
-    return Object.keys(balanceArray).map((key) => balanceArray[key]);
+    return Object.keys(balances).map((key) => balances[key]);
 }
 
 function arrayBalanceToObject(balanceArray) {

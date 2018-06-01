@@ -114,7 +114,7 @@ function getInvite(userId) {
                 })
             .limit(1)
             .toArray((err, result) => {
-                if (err) { return reject(err); }
+                if (err || !result.length) { return reject(err); }
 
                 result[0].password = !!result[0].password;
                 return resolve(result);
