@@ -6,6 +6,7 @@ module.exports = {
     getRecord,
     getBalance,
     getUserBalancePerMonth,
+    getTotalUsersBalancePerGroup,
     getUsersBalance,
     getTotalUsersBalance
 };
@@ -445,6 +446,106 @@ function getTotalUsersBalance(userIds, admin) {
                 },
                 {
                     $match: {
+                        'group.active': true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'businesses',
+                        localField: 'businessId',
+                        foreignField: '_id',
+                        as: 'business'
+                    }
+                },
+                {
+                    $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $match: {
+                        'business.active': true
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            type: '$type',
+                            owner: '$owner'
+                        },
+                        lastUpdate: {$first: '$date'},
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
+                        total: {
+                            $sum: '$value'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        userId: '$_id.owner',
+                        type: '$_id.type',
+                        lastUpdate: '$lastUpdate',
+                        savings: '$driverSaving',
+                        total: '$total'
+                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(util.balancesToUsers(userIds, result));
+            });
+    });
+}
+
+function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .aggregate([
+                {
+                    $sort: {date: -1}
+                },
+                {
+                    $match: {
+                        owner: {$in: userIds},
+                        admin: admin,
+                        active: true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'businessGroups',
+                        localField: 'businessId',
+                        foreignField: 'managedIds',
+                        as: 'businessGroup'
+                    }
+                },
+                {
+                    $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $match: {
+                        'businessGroup.userId': {$in: userIds},
+                        'businessGroup.groupId': groupId
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'groups',
+                        localField: 'businessGroup.groupId',
+                        foreignField: '_id',
+                        as: 'group'
+                    }
+                },
+                {
+                    $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $match: {
+                        'group._id': groupId,
                         'group.active': true
                     }
                 },

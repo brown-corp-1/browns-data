@@ -114,9 +114,12 @@ function getInvite(userId) {
                 })
             .limit(1)
             .toArray((err, result) => {
-                if (err || !result.length) { return reject(err); }
+                if (err) { return reject(err); }
 
-                result[0].password = !!result[0].password;
+                if (result.length) {
+                    result[0].password = !!result[0].password;
+                }
+
                 return resolve(result);
             });
     });
