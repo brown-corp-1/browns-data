@@ -6,6 +6,7 @@ module.exports = {
     getRecord,
     getBalance,
     getUserBalancePerMonth,
+    getUserBalancePerDay,
     getTotalUsersBalancePerGroup,
     getUsersBalance,
     getTotalUsersBalance
@@ -616,9 +617,7 @@ function getUserBalancePerMonth(businessId, userId, admin) {
                 {
                     $group: {
                         _id: {
-                            businessId: '$businessId',
                             type: '$type',
-                            owner: '$owner',
                             month: {
                                 $month: '$date'
                             },
@@ -650,7 +649,63 @@ function getUserBalancePerMonth(businessId, userId, admin) {
                     return reject(err);
                 }
 
-                return resolve(util.consolidateBalances(result));
+                return resolve(util.consolidateMontlyBalances(result));
+            });
+    });
+}
+
+function getUserBalancePerDay(businessId, userId, admin) {
+    return new Promise((resolve, reject) => {
+        db.collection('transactions')
+            .aggregate([
+                {
+                    $match: {
+                        businessId,
+                        owner: userId,
+                        admin,
+                        active: true
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            type: '$type',
+                            month: {
+                                $month: '$date'
+                            },
+                            year: {
+                                $year: '$date'
+                            },
+                            day: {
+                                $dayOfMonth: '$date'
+                            }
+                        },
+                        driverSaving: {
+                            $sum: '$driverSaving'
+                        },
+                        total: {
+                            $sum: '$value'
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        type: '$_id.type',
+                        day: '$_id.day',
+                        month: '$_id.month',
+                        year: '$_id.year',
+                        savings: '$driverSaving',
+                        total: '$total'
+                    }
+                }
+            ])
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(util.consolidateDailyBalances(result));
             });
     });
 }

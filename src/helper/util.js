@@ -2,7 +2,8 @@ module.exports = {
     arrayBalanceToObject,
     balancesToUsers,
     createFolder,
-    consolidateBalances,
+    consolidateDailyBalances,
+    consolidateMontlyBalances,
     saveImages
 };
 
@@ -17,7 +18,7 @@ function createFolder(folder) {
     }
 }
 
-function consolidateBalances(balanceArray) {
+function consolidateMontlyBalances(balanceArray) {
     let balances = {};
 
     balanceArray.forEach((balance) => {
@@ -27,6 +28,37 @@ function consolidateBalances(balanceArray) {
             balances[key] = {
                 year: balance.year,
                 month: balance.month
+            };
+        }
+
+        if (balance.type === typeOfTransaction.QUOTA) {
+            balances[key].deposits = balance.total + balance.savings;
+        }
+        if (balance.type === typeOfTransaction.EXPENSE) {
+            balances[key].expenses = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_OUT) {
+            balances[key].cashOut = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_IN) {
+            balances[key].cashIn = balance.total;
+        }
+    });
+
+    return Object.keys(balances).map((key) => balances[key]);
+}
+
+function consolidateDailyBalances(balanceArray) {
+    let balances = {};
+
+    balanceArray.forEach((balance) => {
+        const key = balance.year + ' ' + balance.month + ' ' + balance.day;
+
+        if (!balances[key]) {
+            balances[key] = {
+                year: balance.year,
+                month: balance.month,
+                day: balance.day
             };
         }
 
