@@ -430,6 +430,28 @@ function getTotalUsersBalance(userIds, admin) {
                     $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
                 },
                 {
+                    $unwind: {path: '$businessGroup.businessIds', preserveNullAndEmptyArrays: true}
+                },
+                {
+                    $addFields: {
+                        isBusiness: {
+                            $eq: [
+                                '$businessGroup.businessIds', '$businessId'
+                            ]
+                        }
+                    }
+                },
+                {
+                    $match: {
+                        isBusiness: true
+                    }
+                },
+                {
+                    $match: {
+                        'businessGroup.userId': {$in: userIds}
+                    }
+                },
+                {
                     $lookup: {
                         from: 'groups',
                         localField: 'businessGroup.groupId',
