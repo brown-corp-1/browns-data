@@ -241,7 +241,7 @@ function findUsersByGroup(groupId) {
                 },
                 {
                     $sort: {firstName: 1, lastName: 1}
-                },
+                }
             ])
             .toArray((err, result) => {
                 if (err) {
