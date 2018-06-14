@@ -238,6 +238,9 @@ function findUsersByGroup(groupId) {
                         businesses: '$businessIds',
                         currentBusiness: '$currentBusinessId'
                     }
+                },
+                {
+                    $sort: {firstName: 1, lastName: 1}
                 }
             ])
             .toArray((err, result) => {
