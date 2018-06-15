@@ -421,30 +421,13 @@ function getTotalUsersBalance(userIds, admin) {
                 {
                     $lookup: {
                         from: 'businessGroups',
-                        localField: 'owner',
-                        foreignField: 'userId',
+                        localField: 'businessId',
+                        foreignField: admin ? 'managedIds' : 'businessIds',
                         as: 'businessGroup'
                     }
                 },
                 {
                     $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
-                },
-                {
-                    $unwind: {path: '$businessGroup.businessIds', preserveNullAndEmptyArrays: true}
-                },
-                {
-                    $addFields: {
-                        isBusiness: {
-                            $eq: [
-                                '$businessGroup.businessIds', '$businessId'
-                            ]
-                        }
-                    }
-                },
-                {
-                    $match: {
-                        isBusiness: true
-                    }
                 },
                 {
                     $match: {
