@@ -430,9 +430,12 @@ function getTotalUsersBalance(userIds, admin) {
                     $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $match: {
-                        'businessGroup.userId': {$in: userIds}
+                    $addFields: {
+                        matches: {$eq: ['$businessGroup.userId', '$owner']}
                     }
+                },
+                {
+                    $match: {matches: true}
                 },
                 {
                     $lookup: {
@@ -520,7 +523,7 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     $lookup: {
                         from: 'businessGroups',
                         localField: 'businessId',
-                        foreignField: 'managedIds',
+                        foreignField: admin ? 'businessIds' : 'managedIds',
                         as: 'businessGroup'
                     }
                 },
@@ -528,8 +531,13 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
                 },
                 {
+                    $addFields: {
+                        matches: {$eq: ['$businessGroup.userId', '$owner']}
+                    }
+                },
+                {
                     $match: {
-                        'businessGroup.userId': {$in: userIds},
+                        matches: true,
                         'businessGroup.groupId': groupId
                     }
                 },
