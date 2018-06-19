@@ -523,7 +523,7 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     $lookup: {
                         from: 'businessGroups',
                         localField: 'businessId',
-                        foreignField: admin ? 'businessIds' : 'managedIds',
+                        foreignField: admin ? 'managedIds' : 'businessIds',
                         as: 'businessGroup'
                     }
                 },
