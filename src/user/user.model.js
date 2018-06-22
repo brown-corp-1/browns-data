@@ -1,24 +1,29 @@
 module.exports = {
+    add,
+    exist,
+    existResetToken,
     get,
-    getDrivers,
+    getByEmail,
+    getInvite,
+    getUsersInformation,
     login,
-    setCurrentCab,
-    getCurrentDriversPerCab,
-    getCurrentManagers,
-    getUsersInformation
+    resetPassword,
+    setAsDriver,
+    update,
+    updatePassword
 };
 
 const Promise = require('promise');
+const ObjectID = require('mongodb').ObjectID;
 
 function get(userId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    id: userId
+                    _id: userId
                 },
                 {
-                    _id: 0,
                     password: 0
                 })
             .limit(1)
@@ -29,22 +34,51 @@ function get(userId) {
     });
 }
 
-function login(userId, password) {
+function getByEmail(email) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    id: userId,
-                    password: password
+                    email: email
                 },
+                {})
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+                return resolve(result.length ? result[0] : null);
+            });
+    });
+}
+
+function exist(email) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find(
                 {
-                    id: 1,
-                    firstName: 1,
-                    lastName: 1,
-                    photo: 1,
-                    roles: 1,
-                    email: 1
-                })
+                    email: email
+                },
+                {}
+            )
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+                return resolve(result.length);
+            });
+    });
+}
+
+function login(userId, password) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find({
+                email: userId,
+                password: password
+            })
+            .project({
+                firstName: 1,
+                lastName: 1,
+                photo: 1
+            })
             .limit(1)
             .toArray((err, result) => {
                 if (err) { return reject(err); }
@@ -53,40 +87,59 @@ function login(userId, password) {
     });
 }
 
-function getDrivers() {
+function add(user) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .insertOne(
+                user,
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result.insertedId);
+                });
+    });
+}
+
+function getInvite(userId) {
     return new Promise((resolve, reject) => {
         db.collection('users')
             .find(
                 {
-                    roles: {
-                        $elemMatch: {$eq: 'DRIVER'}
-                    }
+                    _id: userId
                 },
                 {
-                    id: 1,
                     firstName: 1,
                     lastName: 1,
-                    photo: 1
+                    email: 1,
+                    password: 1
                 })
-            .sort({firstName: 1})
+            .limit(1)
             .toArray((err, result) => {
                 if (err) { return reject(err); }
+
+                if (result.length) {
+                    result[0].password = !!result[0].password;
+                }
+
                 return resolve(result);
             });
     });
 }
 
-function setCurrentCab(userId, plate) {
+function setAsDriver(groupId, userId, businessId) {
     return new Promise((resolve, reject) => {
-        db.collection('users')
-            .update(
-                {id: userId},
+        db.collection('businessGroups')
+            .updateOne(
+                {
+                    userId: userId,
+                    groupId: groupId
+                },
                 {
                     $set: {
-                        currentCab: plate
+                        currentBusinessId: businessId
                     },
                     $addToSet: {
-                        cabs: plate
+                        businessIds: businessId,
+                        roles: 'DRIVER'
                     }
                 },
                 (err, result) => {
@@ -96,79 +149,123 @@ function setCurrentCab(userId, plate) {
     });
 }
 
-function getCurrentDriversPerCab(plate) {
-    return new Promise((resolve, reject) => {
-        db.collection('users')
-            .find(
-                {
-                    currentCab: plate,
-                    roles: {
-                        $elemMatch: {$eq: 'DRIVER'}
-                    }
-                },
-                {
-                    _id: 0,
-                    id: 1,
-                    firstName: 1,
-                    lastName: 1,
-                    photo: 1
-                }
-            )
-            .sort({firstName: 1})
-            .toArray((err, result) => {
-                if (err) { return reject(err); }
-                return resolve(result);
-            });
-    });
-}
-
-function getCurrentManagers(plate) {
-    return new Promise((resolve, reject) => {
-        db.collection('users')
-            .find(
-                {
-                    roles: {
-                        $elemMatch: {$eq: 'MANAGER'}
-                    },
-                    managed: {
-                        $elemMatch: {$eq: plate}
-                    }
-                },
-                {
-                    _id: 0,
-                    id: 1,
-                    firstName: 1,
-                    lastName: 1,
-                    photo: 1
-                }
-            )
-            .sort({firstName: 1})
-            .toArray((err, result) => {
-                if (err) { return reject(err); }
-
-                return resolve(result);
-            });
-    });
-}
-
 function getUsersInformation(ids) {
     return new Promise((resolve, reject) => {
         db.collection('users')
-            .find({
-                id: { $in: ids }
-            },
-            {
-                _id: 0,
-                id: 1,
-                firstName: 1,
-                lastName: 1,
-                photo: 1,
-                email: 1
-            })
+            .find(
+                {
+                    _id: {$in: ids}
+                })
+            .project(
+                {
+                    firstName: 1,
+                    lastName: 1,
+                    photo: 1,
+                    email: 1,
+                    resetToken: 1
+                })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
 
                 return resolve(result);
+            });
+    });
+}
+
+function update(userId, firstName, lastName, password, photo, photos) {
+    return new Promise((resolve, reject) => {
+        let data = {
+            firstName,
+            lastName
+        };
+
+        if (password) {
+            data.password = password;
+        }
+
+        if (photo) {
+            data.photo = photo;
+        }
+
+        db.collection('users')
+            .updateOne(
+                {
+                    _id: userId
+                },
+                {
+                    $set: data,
+                    $push: {
+                        photos: {
+                            $each: photos
+                        }
+                    }
+                },
+                (err) => {
+                    if (err) { return reject(err);}
+
+                    return resolve(true);
+                });
+    });
+}
+
+function resetPassword(email) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    email: email
+                },
+                {
+                    $set: {
+                        resetToken: new ObjectID()
+                    }
+                },
+                (err) => {
+                    if (err) { return reject(err);}
+
+                    return resolve(true);
+                });
+    });
+}
+
+function updatePassword(resetToken, password) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    resetToken
+                },
+                {
+                    $set: {
+                        password
+                    },
+                    $unset: {
+                        resetToken: 1
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err);}
+
+                    return resolve(result);
+                });
+    });
+}
+
+function existResetToken(resetToken) {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .find(
+                {
+                    resetToken
+                })
+            .project({
+                email: 1
+            })
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) { return reject(err); }
+
+                return resolve(result && result.length ? result[0] : null);
             });
     });
 }

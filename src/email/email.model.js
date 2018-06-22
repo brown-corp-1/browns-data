@@ -30,7 +30,7 @@ function getUnsent() {
                     owner: 1,
                     admin: 1,
                     type: 1,
-                    plate: 1,
+                    businessId: 1,
                     date: 1,
                     value: 1,
                     driver: 1,

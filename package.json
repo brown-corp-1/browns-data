@@ -10,11 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mongodb": "^2.1.4",
-    "nodemailer": "^4.0.1",
-    "promise": "^8.0.1",
+    "mongodb": "^3.0.3",
     "mongodb-backup": "^1.6.9",
     "mongodb-restore": "^1.6.2",
+    "nodemailer": "^4.0.1",
+    "promise": "^8.0.1",
     "uuid": "^3.1.0"
   },
   "devDependencies": {

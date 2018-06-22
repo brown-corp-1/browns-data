@@ -1,11 +1,16 @@
 module.exports = {
+    arrayBalanceToObject,
+    balancesToUsers,
     createFolder,
-    arrrayBalanceToObject,
-    balancesToUsers
+    consolidateDailyBalances,
+    consolidateMontlyBalances,
+    saveImages
 };
 
 const fs = require('fs');
 const {typeOfTransaction} = require('../transaction/transaction.constant');
+const uuid = require('uuid');
+const resourcesFolder = 'public/resources/';
 
 function createFolder(folder) {
     if (!fs.existsSync(folder)) {
@@ -13,7 +18,68 @@ function createFolder(folder) {
     }
 }
 
-function arrrayBalanceToObject(balanceArray) {
+function consolidateMontlyBalances(balanceArray) {
+    let balances = {};
+
+    balanceArray.forEach((balance) => {
+        const key = balance.year + ' ' + balance.month;
+
+        if (!balances[key]) {
+            balances[key] = {
+                year: balance.year,
+                month: balance.month
+            };
+        }
+
+        if (balance.type === typeOfTransaction.QUOTA) {
+            balances[key].deposits = balance.total + balance.savings;
+        }
+        if (balance.type === typeOfTransaction.EXPENSE) {
+            balances[key].expenses = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_OUT) {
+            balances[key].cashOut = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_IN) {
+            balances[key].cashIn = balance.total;
+        }
+    });
+
+    return Object.keys(balances).map((key) => balances[key]);
+}
+
+function consolidateDailyBalances(balanceArray) {
+    let balances = {};
+
+    balanceArray.forEach((balance) => {
+        const key = balance.year + ' ' + balance.month + ' ' + balance.day;
+
+        if (!balances[key]) {
+            balances[key] = {
+                year: balance.year,
+                month: balance.month,
+                day: balance.day
+            };
+        }
+
+        if (balance.type === typeOfTransaction.QUOTA) {
+            balances[key].deposits = balance.total + balance.savings;
+        }
+        if (balance.type === typeOfTransaction.EXPENSE) {
+            balances[key].expenses = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_OUT) {
+            balances[key].cashOut = balance.total;
+        }
+        if (balance.type === typeOfTransaction.CASH_IN) {
+            balances[key].cashIn = balance.total;
+        }
+    });
+
+    return Object.keys(balances).map((key) => balances[key]);
+}
+
+function arrayBalanceToObject(balanceArray) {
     const deposits = balanceArray.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
     const expenses = balanceArray.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
     const cashOut = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
@@ -46,7 +112,7 @@ function balancesToUsers(userIds, result) {
     let balances = {};
 
     userIds.forEach((userId) => {
-        const userBalances = result.filter((balance) => balance.userId === userId);
+        const userBalances = result.filter((balance) => balance.userId.toString() === userId.toString());
 
         if (userBalances && userBalances.length) {
             const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
@@ -90,4 +156,37 @@ function balancesToUsers(userIds, result) {
     });
 
     return balances;
+}
+
+function saveImages(entityId, images, imagesPath) {
+    let lstImages = imagesPath || [];
+
+    return new Promise((resolve, reject) => {
+        const id = uuid.v4();
+        const businessFolder = resourcesFolder + entityId;
+        const imagesFolder = businessFolder + '/images/';
+        const galleyFolder = imagesFolder + id;
+
+        if (images && images.length) {
+            try {
+                createFolder(resourcesFolder);
+                createFolder(businessFolder);
+                createFolder(imagesFolder);
+                createFolder(galleyFolder);
+
+                images.forEach((img) => {
+                    const imageId = uuid.v4();
+
+                    lstImages.push(galleyFolder.replace('public/', '') + '/' + imageId + '.png');
+                    fs.writeFileSync(galleyFolder + '/' + imageId + '.png', img.buffer);
+                });
+
+                return resolve(lstImages);
+            } catch (ex) {
+                return reject(ex);
+            }
+        } else {
+            return resolve(lstImages);
+        }
+    });
 }
