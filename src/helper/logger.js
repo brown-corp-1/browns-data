@@ -3,7 +3,7 @@ module.exports = {
     info
 };
 
-const config = require('../../config');
+const config = globalConfig.brownsData;
 
 function error(res, errorMessage, errorCode) {
     if (config.debug) {

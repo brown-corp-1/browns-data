@@ -5,12 +5,12 @@ module.exports = {
 };
 
 const fs = require('fs');
-const config = require('../../config');
 const mailer = require('../mailer/mailer');
 const util = require('./util');
 const logger = require('./logger');
 const backup = require('mongodb-backup');
 const restore = require('mongodb-restore');
+const config = globalConfig.brownsData;
 
 function init() {
     setInterval(() => {
