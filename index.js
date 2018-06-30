@@ -36,17 +36,17 @@ module.exports = {
 };
 
 function init(config) {
-    global.globalConfig = config;
+    global.config = config;
 
     return new Promise((resolve, reject) => {
-        MongoClient.connect(globalConfig.brownsData.db, (err, client) => {
+        MongoClient.connect(config.brownsData.db, (err, client) => {
             if (err) {
                 return reject('Mongo: cannot connect: ', err);
             }
 
             global.db = client.db('cabsManager');
 
-            if (globalConfig.brownsData.makeBackup) {
+            if (config.brownsData.makeBackup) {
                 job.init();
             }
 

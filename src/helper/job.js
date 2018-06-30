@@ -10,7 +10,6 @@ const util = require('./util');
 const logger = require('./logger');
 const backup = require('mongodb-backup');
 const restore = require('mongodb-restore');
-const config = globalConfig.brownsData;
 
 function init() {
     setInterval(() => {
@@ -24,17 +23,19 @@ function makeBackup() {
     logger.info('making backup');
 
     const now = new Date();
-    const yearFolder = config.backupFolder + '/' + now.getFullYear();
+    const yearFolder = config.brownsData.backupFolder + '/' + now.getFullYear();
     const monthFolder = yearFolder + '/' + (now.getMonth() + 1) + '/';
     const filename = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + '_' + now.getHours() + '-' + now.getMinutes() + '.bk';
 
     try {
-        util.createFolder(config.backupFolder);
+        util.createFolder(config.brownsData.backupFolder);
         util.createFolder(yearFolder);
         util.createFolder(monthFolder);
 
+        logger.info('generating file ' + filename);
+
         backup({
-            uri: config.db,
+            uri: config.brownsData.db,
             root: monthFolder,
             tar: filename,
             callback: () => {
@@ -54,10 +55,10 @@ function makeBackup() {
 
 function restoreBackup(dir, filename, callback) {
     logger.info('restore backup - BROWN');
-    const root = config.backupFolder + '/' + dir;
+    const root = config.brownsData.backupFolder + '/' + dir;
 
     restore({
-        uri: config.db,
+        uri: config.brownsData.db,
         root: root,
         tar: filename,
         drop: true,
