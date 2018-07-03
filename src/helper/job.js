@@ -6,6 +6,7 @@ module.exports = {
 
 const fs = require('fs');
 const mailer = require('../mailer/mailer');
+const {cleanResetPasswordToken} = require('../user/user.model');
 const util = require('./util');
 const logger = require('./logger');
 const backup = require('mongodb-backup');
@@ -17,6 +18,10 @@ function init() {
             makeBackup();
         }
     }, 3600000); // an hour
+
+    setInterval(() => {
+        cleanResetPasswordToken();
+    }, 600000); // each 10 minutes remove reset password token
 }
 
 function makeBackup() {
