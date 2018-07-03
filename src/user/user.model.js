@@ -163,7 +163,7 @@ function getUsersInformation(ids) {
                     lastName: 1,
                     photo: 1,
                     email: 1,
-                    resetToken: 1
+                    resetPassword: 1
                 })
             .toArray((err, result) => {
                 if (err) { return reject(err); }
