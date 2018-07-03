@@ -1,5 +1,6 @@
 module.exports = {
     add,
+    cleanResetPasswordToken,
     exist,
     existResetToken,
     get,
@@ -217,7 +218,10 @@ function resetPassword(email) {
                 },
                 {
                     $set: {
-                        resetToken: new ObjectID()
+                        resetPassword: {
+                            token: new ObjectID(),
+                            date: new Date()
+                        }
                     }
                 },
                 (err) => {
@@ -233,14 +237,14 @@ function updatePassword(resetToken, password) {
         db.collection('users')
             .updateOne(
                 {
-                    resetToken
+                    'resetPassword.token': resetToken
                 },
                 {
                     $set: {
                         password
                     },
                     $unset: {
-                        resetToken: 1
+                        resetPassword: 1
                     }
                 },
                 (err, result) => {
@@ -256,7 +260,7 @@ function existResetToken(resetToken) {
         db.collection('users')
             .find(
                 {
-                    resetToken
+                    'resetPassword.token': resetToken
                 })
             .project({
                 email: 1
@@ -267,5 +271,25 @@ function existResetToken(resetToken) {
 
                 return resolve(result && result.length ? result[0] : null);
             });
+    });
+}
+
+function cleanResetPasswordToken() {
+    return new Promise((resolve, reject) => {
+        db.collection('users')
+            .updateOne(
+                {
+                    'resetPassword.date': {$lt: new Date(new Date() - 600000)}
+                },
+                {
+                    $unset: {
+                        resetPassword: 1
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+
+                    return resolve(result);
+                });
     });
 }
