@@ -21,7 +21,7 @@ function init() {
 
     setInterval(() => {
         cleanResetPasswordToken();
-    }, 600000); // each 10 minutes remove reset password token
+    }, 60000); // each 10 minutes remove reset password token
 }
 
 function makeBackup() {
