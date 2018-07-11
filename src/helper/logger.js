@@ -3,17 +3,15 @@ module.exports = {
     info
 };
 
-const config = require('../../config');
-
 function error(res, errorMessage, errorCode) {
-    if (config.debug) {
+    if (config.brownsData.debug) {
         console.log(500, errorMessage, errorCode ? errorCode : '');
     }
     res.send(500, errorMessage);
 }
 
 function info(message, data) {
-    if (config.debug) {
+    if (config.brownsData.debug) {
         console.log(message, data ? data : '');
     }
 }

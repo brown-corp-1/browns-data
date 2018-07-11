@@ -1,5 +1,4 @@
 const MongoClient = require('mongodb').MongoClient;
-const config = require('./config');
 
 // @helpers
 const logger = require('./src/helper/logger');
@@ -36,22 +35,18 @@ module.exports = {
     job
 };
 
-function init(options) {
-    let newConfig = config;
-
-    if (options !== null && typeof options === 'object') {
-        newConfig = Object.assign(config, options);
-    }
+function init(config) {
+    global.config = config;
 
     return new Promise((resolve, reject) => {
-        MongoClient.connect(newConfig.db, (err, client) => {
+        MongoClient.connect(config.brownsData.db, (err, client) => {
             if (err) {
                 return reject('Mongo: cannot connect: ', err);
             }
 
             global.db = client.db('cabsManager');
 
-            if (newConfig.makeBackup) {
+            if (config.brownsData.makeBackup) {
                 job.init();
             }
 
