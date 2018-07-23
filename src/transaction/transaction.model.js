@@ -15,58 +15,92 @@ module.exports = {
 const Promise = require('promise');
 const util = require('../helper/util');
 
-function get(businessId, userId, admin, pageNumber, pageSize) {
+const driverLookup = {
+    from: 'users',
+    localField: 'driver',
+    foreignField: '_id',
+    as: 'driver'
+};
+
+const targetLookup = {
+    from: 'users',
+    localField: 'target',
+    foreignField: '_id',
+    as: 'target'
+};
+
+const fromLookup = {
+    from: 'users',
+    localField: 'from',
+    foreignField: '_id',
+    as: 'from'
+};
+
+const businessLookup = {
+    from: 'businesses',
+    localField: 'businessId',
+    foreignField: '_id',
+    as: 'business'
+};
+
+const groupLookup = {
+    from: 'groups',
+    localField: 'businessGroup.groupId',
+    foreignField: '_id',
+    as: 'group'
+};
+
+function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
     return new Promise((resolve, reject) => {
+        let match = {
+            businessId: businessId,
+            owner: userId,
+            admin: admin,
+            active: true
+        };
+
+        if (transactionTypes && transactionTypes.length) {
+            match.type = { $in: transactionTypes};
+        }
+
+        if (startDate) {
+            match.date = {$gte: startDate};
+        }
+
+        if (endDate) {
+            match.date = match.date || {};
+            match.date.$lte = endDate;
+        }
+
+        if (description) {
+            match.$text = {$search: description};
+        }
+
         db.collection('transactions')
             .aggregate([
                 {
-                    $match: {
-                        businessId: businessId,
-                        owner: userId,
-                        admin: admin,
-                        active: true
-                    }
+                    $match: match
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'driver',
-                        foreignField: '_id',
-                        as: 'driver'
-                    }
+                    $lookup: driverLookup
                 },
                 {
                     $unwind: {path: '$driver', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'target',
-                        foreignField: '_id',
-                        as: 'target'
-                    }
+                    $lookup: targetLookup
                 },
                 {
                     $unwind: {path: '$target', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'from',
-                        foreignField: '_id',
-                        as: 'from'
-                    }
+                    $lookup: fromLookup
                 },
                 {
                     $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'businesses',
-                        localField: 'businessId',
-                        foreignField: '_id',
-                        as: 'business'
-                    }
+                    $lookup: businessLookup
                 },
                 {
                     $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
@@ -128,45 +162,25 @@ function getRecord(transactionId) {
                     }
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'driver',
-                        foreignField: '_id',
-                        as: 'driver'
-                    }
+                    $lookup: driverLookup
                 },
                 {
                     $unwind: {path: '$driver', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'target',
-                        foreignField: '_id',
-                        as: 'target'
-                    }
+                    $lookup: targetLookup
                 },
                 {
                     $unwind: {path: '$target', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'from',
-                        foreignField: '_id',
-                        as: 'from'
-                    }
+                    $lookup: fromLookup
                 },
                 {
                     $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $lookup: {
-                        from: 'businesses',
-                        localField: 'businessId',
-                        foreignField: '_id',
-                        as: 'business'
-                    }
+                    $lookup: businessLookup
                 },
                 {
                     $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
@@ -438,12 +452,7 @@ function getTotalUsersBalance(userIds, admin) {
                     $match: {matches: true}
                 },
                 {
-                    $lookup: {
-                        from: 'groups',
-                        localField: 'businessGroup.groupId',
-                        foreignField: '_id',
-                        as: 'group'
-                    }
+                    $lookup: groupLookup
                 },
                 {
                     $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
@@ -454,12 +463,7 @@ function getTotalUsersBalance(userIds, admin) {
                     }
                 },
                 {
-                    $lookup: {
-                        from: 'businesses',
-                        localField: 'businessId',
-                        foreignField: '_id',
-                        as: 'business'
-                    }
+                    $lookup: businessLookup
                 },
                 {
                     $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
@@ -542,12 +546,7 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     }
                 },
                 {
-                    $lookup: {
-                        from: 'groups',
-                        localField: 'businessGroup.groupId',
-                        foreignField: '_id',
-                        as: 'group'
-                    }
+                    $lookup: groupLookup
                 },
                 {
                     $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
@@ -559,12 +558,7 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     }
                 },
                 {
-                    $lookup: {
-                        from: 'businesses',
-                        localField: 'businessId',
-                        foreignField: '_id',
-                        as: 'business'
-                    }
+                    $lookup: businessLookup
                 },
                 {
                     $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
