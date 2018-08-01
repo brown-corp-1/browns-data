@@ -60,7 +60,7 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
         };
 
         if (transactionTypes && transactionTypes.length) {
-            match.type = { $in: transactionTypes};
+            match.type = {$in: transactionTypes};
         }
 
         if (startDate) {
@@ -69,11 +69,11 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
 
         if (endDate) {
             match.date = match.date || {};
-            match.date.$lte = endDate;
+            match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
         }
 
         if (description) {
-            match.$text = {$search: description};
+            match.description = {$regex: description, $options: '$i'};
         }
 
         db.collection('transactions')
@@ -314,20 +314,39 @@ function addMany(transactions) {
     });
 }
 
-function getBalance(businessId, userId, admin) {
+function getBalance(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
     return new Promise((resolve, reject) => {
+        let match = {
+            businessId: businessId,
+            owner: userId,
+            admin: admin,
+            active: true
+        };
+
+        if (transactionTypes && transactionTypes.length) {
+            match.type = {$in: transactionTypes};
+        }
+
+        if (startDate) {
+            match.date = {$gte: startDate};
+        }
+
+        if (endDate) {
+            match.date = match.date || {};
+            match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
+        }
+
+        if (description) {
+            match.description = {$regex: description, $options: '$i'};
+        }
+
         db.collection('transactions')
             .aggregate([
                 {
                     $sort: {date: -1}
                 },
                 {
-                    $match: {
-                        businessId: businessId,
-                        owner: userId,
-                        admin: admin,
-                        active: true
-                    }
+                    $match: match
                 },
                 {
                     $group: {
