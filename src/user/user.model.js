@@ -42,11 +42,20 @@ function getByEmail(email) {
                 {
                     email: email
                 },
-                {})
+                {
+                    password: 1
+                })
             .limit(1)
             .toArray((err, result) => {
                 if (err) { return reject(err); }
-                return resolve(result.length ? result[0] : null);
+
+                if (result.length) {
+                    result[0].password = !!result[0].password;
+
+                    return resolve(result[0]);
+                }
+
+                return null;
             });
     });
 }
