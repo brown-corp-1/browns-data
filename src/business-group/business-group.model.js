@@ -8,6 +8,7 @@ module.exports = {
     getCurrentDriversPerBusiness,
     getCurrentManagers,
     removeBusiness,
+    removeUserFromGroup,
     setCurrentBusiness
 };
 
@@ -21,7 +22,8 @@ function add(userId, groupId, managedBusinessId, businessId) {
                     userId,
                     groupId,
                     managedIds: managedBusinessId ? [managedBusinessId] : [],
-                    businessIds: businessId ? [businessId] : []
+                    businessIds: businessId ? [businessId] : [],
+                    active: true
                 },
                 (err, result) => {
                     if (err) {
@@ -214,7 +216,8 @@ function findUsersByGroup(groupId) {
             .aggregate([
                 {
                     $match: {
-                        groupId: groupId
+                        groupId: groupId,
+                        active: true
                     }
                 },
                 {
@@ -271,6 +274,24 @@ function removeBusiness(userIds, groupId, businessId) {
     });
 }
 
+function removeUserFromGroup(userId, groupId) {
+    return new Promise((resolve, reject) => {
+        db.collection('businessGroups')
+            .update({
+                groupId,
+                userId
+            }, {
+                $set: {active: false}
+            }, (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(result);
+            });
+    });
+}
+
 function findRelatedUsersToBusiness(groupId, businessId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
@@ -278,7 +299,8 @@ function findRelatedUsersToBusiness(groupId, businessId) {
                 {
                     $match: {
                         groupId,
-                        businessIds: {$in: [businessId]}
+                        businessIds: {$in: [businessId]},
+                        active: true
                     }
                 },
                 {
