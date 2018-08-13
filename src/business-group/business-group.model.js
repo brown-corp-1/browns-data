@@ -10,12 +10,12 @@ module.exports = {
     getCurrentManagers,
     removeBusiness,
     removeUserFromGroup,
-    setCurrentBusiness
+    setAsDriver
 };
 
 const Promise = require('promise');
 
-function add(userId, groupId, managedBusinessId, businessId) {
+function add(userId, groupId, managedBusinessId, businessId, drivenId) {
     return new Promise((resolve, reject) => {
         db.collection('businessGroups')
             .insertOne(
@@ -24,6 +24,7 @@ function add(userId, groupId, managedBusinessId, businessId) {
                     groupId,
                     managedIds: managedBusinessId ? [managedBusinessId] : [],
                     businessIds: businessId ? [businessId] : [],
+                    drivenIds: drivenId ? [drivenId] : [],
                     active: true
                 },
                 (err, result) => {
@@ -43,10 +44,7 @@ function addBusiness(id, businessId) {
                     _id: id
                 },
                 {
-                    $addToSet: {
-                        businessIds: businessId,
-                        roles: 'OWNER'
-                    }
+                    $addToSet: {businessIds: businessId}
                 },
                 (err, result) => {
                     if (err) {
@@ -103,10 +101,7 @@ function getCurrentDriversPerBusiness(groupId, businessId) {
                 {
                     $match: {
                         groupId,
-                        currentBusinessId: businessId,
-                        roles: {
-                            $elemMatch: {$eq: 'DRIVER'}
-                        }
+                        drivenIds: {$in: [businessId]}
                     }
                 },
                 {
@@ -182,32 +177,6 @@ function getCurrentManagers(groupId, businessId) {
                 }
                 return resolve(result);
             });
-    });
-}
-
-function setCurrentBusiness(userId, groupId, businessId, rol) {
-    return new Promise((resolve, reject) => {
-        db.collection('businessGroups')
-            .updateOne(
-                {
-                    userId: userId,
-                    groupId: groupId
-                },
-                {
-                    $set: {
-                        currentBusinessId: businessId
-                    },
-                    $addToSet: {
-                        businessIds: businessId,
-                        roles: rol
-                    }
-                },
-                (err, result) => {
-                    if (err) {
-                        return reject(err);
-                    }
-                    return resolve(result);
-                });
     });
 }
 
@@ -348,5 +317,29 @@ function findRelatedUsersToBusiness(groupId, businessId) {
 
                 return resolve(result);
             });
+    });
+}
+
+function setAsDriver(groupId, userId, businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('businessGroups')
+            .updateOne(
+                {
+                    userId: userId,
+                    groupId: groupId
+                },
+                {
+                    $set: {
+                        currentBusinessId: businessId
+                    },
+                    $addToSet: {
+                        drivenIds: businessId,
+                        businessIds: businessId
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+                    return resolve(result);
+                });
     });
 }
