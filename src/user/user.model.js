@@ -9,7 +9,6 @@ module.exports = {
     getUsersInformation,
     login,
     resetPassword,
-    setAsDriver,
     update,
     updatePassword
 };
@@ -55,7 +54,7 @@ function getByEmail(email) {
                     return resolve(result[0]);
                 }
 
-                return null;
+                return resolve(null);
             });
     });
 }
@@ -132,30 +131,6 @@ function getInvite(userId) {
 
                 return resolve(result);
             });
-    });
-}
-
-function setAsDriver(groupId, userId, businessId) {
-    return new Promise((resolve, reject) => {
-        db.collection('businessGroups')
-            .updateOne(
-                {
-                    userId: userId,
-                    groupId: groupId
-                },
-                {
-                    $set: {
-                        currentBusinessId: businessId
-                    },
-                    $addToSet: {
-                        businessIds: businessId,
-                        roles: 'DRIVER'
-                    }
-                },
-                (err, result) => {
-                    if (err) { return reject(err); }
-                    return resolve(result);
-                });
     });
 }
 

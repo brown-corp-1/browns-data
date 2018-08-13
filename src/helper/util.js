@@ -4,13 +4,16 @@ module.exports = {
     createFolder,
     consolidateDailyBalances,
     consolidateMontlyBalances,
+    generateImages,
+    putImage,
     saveImages
 };
 
 const fs = require('fs');
 const {typeOfTransaction} = require('../transaction/transaction.constant');
 const uuid = require('uuid');
-const resourcesFolder = 'public/resources/';
+const publicFolder = 'public/';
+const resourcesFolder = publicFolder + 'resources/';
 
 function createFolder(folder) {
     if (!fs.existsSync(folder)) {
@@ -177,7 +180,7 @@ function saveImages(entityId, images, imagesPath) {
                 images.forEach((img) => {
                     const imageId = uuid.v4();
 
-                    lstImages.push(galleyFolder.replace('public/', '') + '/' + imageId + '.png');
+                    lstImages.push(galleyFolder.replace(publicFolder, '') + '/' + imageId + '.png');
                     fs.writeFileSync(galleyFolder + '/' + imageId + '.png', img.buffer);
                 });
 
@@ -189,4 +192,47 @@ function saveImages(entityId, images, imagesPath) {
             return resolve(lstImages);
         }
     });
+}
+
+function putImage(url, image) {
+    return new Promise((resolve, reject) => {
+        if (url && image) {
+            try {
+                if (!fs.existsSync(url)) {
+                    if (url.startsWith(resourcesFolder.replace(publicFolder, ''))) {
+                        let urlParts = url.split('/');
+                        let urlPartsLen = urlParts.length - 1;
+                        let path = publicFolder;
+
+                        for (let j = 0; j < urlPartsLen; j++) {
+                            path += urlParts[j] + '/';
+                            createFolder(path);
+                        }
+
+                        fs.writeFileSync(path + urlParts[urlPartsLen], image.buffer);
+                    }
+                }
+
+                return resolve(true);
+            } catch (ex) {
+                return reject(ex);
+            }
+        } else {
+            return resolve(lstImages);
+        }
+    });
+}
+
+function generateImages(entityId, imagesCount, imagesPath) {
+    const galleyFolder = resourcesFolder + entityId + '/images/' + uuid.v4();
+    let lstImages = imagesPath || [];
+    let i = 0;
+
+    if (imagesCount) {
+        for (; i < imagesCount; i++) {
+            lstImages.push(galleyFolder.replace(publicFolder, '') + '/' + uuid.v4() + '.png');
+        }
+    }
+
+    return lstImages;
 }
