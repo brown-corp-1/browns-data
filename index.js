@@ -17,6 +17,7 @@ const transactionModel = require('./src/transaction/transaction.model');
 const userModel = require('./src/user/user.model');
 const groupModel = require('./src/group/group.model');
 const businessGroupModel = require('./src/business-group/business-group.model');
+const permissionModel = require('./src/permission/permission.model');
 
 module.exports = {
     init,
@@ -32,6 +33,7 @@ module.exports = {
     businessGroupModel,
     emailState,
     groupConstants,
+    permissionModel,
     job
 };
 
