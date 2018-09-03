@@ -2,6 +2,7 @@ module.exports = {
     isManager,
     hasGroup,
     hasBusiness,
+    hasBusinessAnyMode,
     canGetTransaction,
     canReadBusiness
 };
@@ -70,6 +71,35 @@ function hasBusiness(userId, businessId, admin) {
         db.collection('businessGroups')
             .find(
                 filters,
+                projection
+            )
+            .limit(1)
+            .toArray((err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                return resolve(!!result.length);
+            });
+    });
+}
+
+function hasBusinessAnyMode(userId, businessId) {
+    return new Promise((resolve, reject) => {
+        db.collection('businessGroups')
+            .find(
+                {
+                    userId,
+                    $or: [
+                        {
+                            managedIds: {$in: [businessId]}
+                        },
+                        {
+
+                            businessIds: {$in: [businessId]}
+                        }
+                    ]
+                },
                 projection
             )
             .limit(1)
