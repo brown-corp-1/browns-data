@@ -42,7 +42,9 @@ function getByEmail(email) {
                     email: email
                 },
                 {
-                    password: 1
+                    $project: {
+                        password: 1
+                    }
                 })
             .limit(1)
             .toArray((err, result) => {

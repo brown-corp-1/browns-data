@@ -1,4 +1,5 @@
 module.exports = {
+    active,
     add,
     addUserToGroup,
     find,
@@ -41,23 +42,11 @@ function update(groupId, name) {
 }
 
 function remove(groupId) {
-    return new Promise((resolve, reject) => {
-        db.collection('groups')
-            .updateOne(
-                {
-                    _id: groupId
-                },
-                {
-                    $set: {
-                        active: false
-                    }
-                },
-                (err, result) => {
-                    if (err) { return reject(err); }
+    return _updateGroupActive(groupId, false);
+}
 
-                    return resolve(result.result);
-                });
-    });
+function active(groupId) {
+    return _updateGroupActive(groupId, true);
 }
 
 function addUserToGroup(managerId, groupId, userId) {
@@ -102,22 +91,18 @@ function find(userId) {
                     $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
                 },
                 {
-                    $match: {
-                        'group.active': true
-                    }
-                },
-                {
-                    $replaceRoot: {newRoot: '$group'}
-                },
-                {
                     $sort: {
-                        name: 1
+                        'group.name': 1
                     }
                 },
                 {
                     $project: {
-                        name: 1,
-                        managerId: 1
+                        _id: '$group._id',
+                        name: '$group.name',
+                        managerId: '$group.managerId',
+                        active: '$active',
+                        parentActive: '$group.active',
+                        removedFromManager: '$removedFromManager'
                     }
                 }
             ])
@@ -126,5 +111,26 @@ function find(userId) {
 
                 return resolve(result);
             });
+    });
+}
+
+function _updateGroupActive(groupId, isActive) {
+    return new Promise((resolve, reject) => {
+        db.collection('groups')
+            .updateOne(
+                {
+                    _id: groupId
+                },
+                {
+                    $set: {
+                        active: isActive,
+                        lastUpdate: new Date()
+                    }
+                },
+                (err, result) => {
+                    if (err) { return reject(err); }
+
+                    return resolve(result.result);
+                });
     });
 }

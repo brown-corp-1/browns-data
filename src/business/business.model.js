@@ -101,8 +101,7 @@ function getBusinessWithOwners(id) {
             .aggregate([
                 {
                     $match: {
-                        _id: id,
-                        active: true
+                        _id: id
                     }
                 },
                 {
@@ -140,8 +139,7 @@ function getBusinessesWithOwners(businessIds) {
             .aggregate([
                 {
                     $match: {
-                        _id: {$in: businessIds},
-                        active: true
+                        _id: {$in: businessIds}
                     }
                 },
                 {
@@ -163,7 +161,8 @@ function getBusinessesWithOwners(businessIds) {
                             firstName: 1,
                             lastName: 1,
                             photo: 1
-                        }
+                        },
+                        active: 1
                     }
                 }
             ])

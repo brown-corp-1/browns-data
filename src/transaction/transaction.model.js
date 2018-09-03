@@ -451,7 +451,7 @@ function getTotalUsersBalance(userIds, admin) {
                         active: true
                     }
                 },
-                {
+               /* {
                     $lookup: {
                         from: 'businessGroups',
                         localField: 'businessId',
@@ -491,7 +491,7 @@ function getTotalUsersBalance(userIds, admin) {
                     $match: {
                         'business.active': true
                     }
-                },
+                },*/
                 {
                     $group: {
                         _id: {
@@ -572,11 +572,11 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                 },
                 {
                     $match: {
-                        'group._id': groupId,
-                        'group.active': true
+                        'group._id': groupId/*,
+                        'group.active': true*/
                     }
                 },
-                {
+                /*{
                     $lookup: businessLookup
                 },
                 {
@@ -586,7 +586,7 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
                     $match: {
                         'business.active': true
                     }
-                },
+                },*/
                 {
                     $group: {
                         _id: {

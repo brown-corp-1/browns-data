@@ -1,7 +1,9 @@
 module.exports = {
     init,
     makeBackup,
-    restoreBackup
+    restoreBackup,
+    makeBackupNew,
+    restoreBackupNew
 };
 
 const fs = require('fs');
@@ -11,6 +13,8 @@ const util = require('./util');
 const logger = require('./logger');
 const backup = require('mongodb-backup');
 const restore = require('mongodb-restore');
+const sys = require('sys');
+const exec = require('child_process').exec;
 
 function init() {
     setInterval(() => {
@@ -22,6 +26,79 @@ function init() {
     setInterval(() => {
         cleanResetPasswordToken();
     }, 60000); // each 10 minutes remove reset password token
+}
+
+function makeBackupNew(skipEmail, callback) {
+    logger.info('making backup');
+
+    const now = new Date();
+    const monthFolder = 'backups/' + now.getFullYear() + '/' + (now.getMonth() + 1) + '/';
+    const backupName = _getDateFolder(now);
+    const dateFolder = monthFolder + backupName;
+    const filename = backupName + '.7z';
+    const runMongodump = 'mongodump ' + _getConnectionString() + ' -o ' + dateFolder;
+    const runZip = '"' + config.brownsData.zipExec + '" a ' + filename + ' ' + config.brownsData.database;
+
+    try {
+        logger.info('Running mongodump');
+
+        exec(runMongodump, {cwd: config.brownsData.mongoFolder}, () => {
+            logger.info('Backup was generated on ' + config.brownsData.mongoFolder + dateFolder);
+            logger.info('Running zip');
+
+            exec(runZip, {cwd: config.brownsData.mongoFolder + dateFolder}, () => {
+                logger.info('Zip was done');
+
+                if (!skipEmail) {
+                    logger.info('Sending email');
+                    const file = fs.readFileSync(config.brownsData.mongoFolder + dateFolder + '/' + filename);
+
+                    if (!skipEmail) {
+                        mailer.sendBackup([{
+                            filename: 'backup.bk',
+                            content: file
+                        }]);
+                    }
+                }
+
+                logger.info('backup ends');
+
+                if (callback) {
+                    callback();
+                }
+            });
+        });
+    } catch (ex) {
+        logger.info(ex);
+    }
+}
+
+function restoreBackupNew(filename, callback) {
+    logger.info('restore backup');
+
+    const dateFolder = 'restore/' + _getDateFolder(new Date());
+    const runZip = '"' + config.brownsData.zipExec + '" x "' + filename + '" -o"' + config.brownsData.mongoFolder + dateFolder + '"';
+    const runRestore = 'mongorestore ' + _getConnectionString() + ' ' + dateFolder + '/' + config.brownsData.database;
+
+    logger.info('unzipping ', filename, config.brownsData.mongoFolder + '/' + dateFolder);
+
+    //VALIDAR SI EL ARCHIVO EXISTE
+    exec(runZip, () => {
+        // make a backup before restore
+        makeBackupNew(true, () => {
+            logger.info('dropping database');
+            db.dropDatabase(() => {
+                logger.info('restoring');
+                exec(runRestore, {cwd: config.brownsData.mongoFolder}, () => {
+                    logger.info('restore was done');
+
+                    if (callback) {
+                        callback();
+                    }
+                });
+            });
+        });
+    });
 }
 
 function makeBackup() {
@@ -75,4 +152,22 @@ function restoreBackup(dir, filename, callback) {
             }
         }
     });
+}
+
+function _getConnectionString() {
+    return '--host ' + config.brownsData.host +
+        ' --db ' + config.brownsData.database +
+        ' --port ' + config.brownsData.port +
+        ' -u ' + config.brownsData.user +
+        ' -p ' + config.brownsData.pass +
+        ' --authenticationDatabase ' + config.brownsData.adminDatabase;
+}
+
+function _getDateFolder(now) {
+    return now.getFullYear() + '-' +
+        (now.getMonth() + 1) + '-' +
+        now.getDate() + '_' +
+        now.getHours() + '-' +
+        now.getMinutes() + '-' +
+        now.getSeconds();
 }
