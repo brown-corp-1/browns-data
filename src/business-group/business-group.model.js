@@ -1,5 +1,6 @@
 module.exports = {
   activeUser,
+  activeBusiness,
   add,
   addBusiness,
   addManagedBusiness,
@@ -11,6 +12,7 @@ module.exports = {
   removeBusiness,
   removeUserFromGroup,
   setAsDriver,
+  setAsRelatedUser,
   removeAsDriver
 };
 
@@ -187,8 +189,7 @@ function findUsersByGroup(groupId) {
       .aggregate([
         {
           $match: {
-            groupId: groupId,
-            active: true
+            groupId: groupId
           }
         },
         {
@@ -210,7 +211,8 @@ function findUsersByGroup(groupId) {
             photo: '$user.photo',
             roles: 1,
             businesses: '$businessIds',
-            currentBusiness: '$currentBusinessId'
+            currentBusiness: '$currentBusinessId',
+            removedFromManager: '$removedFromManager'
           }
         },
         {
@@ -235,6 +237,24 @@ function removeBusiness(userId, groupId, businessId) {
         userId
       }, {
         $addToSet: {deletedBusinessIds: businessId}
+      }, (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
+function activeBusiness(userId, groupId, businessId) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .updateOne({
+        groupId,
+        userId
+      }, {
+        $pull: {deletedBusinessIds: {$in: [businessId]}}
       }, (err, result) => {
         if (err) {
           return reject(err);
@@ -278,7 +298,8 @@ function activeUser(userId, groupId) {
         groupId,
         userId
       }, {
-        $set: {active: true}
+        $set: {active: true},
+        $unset: {removedFromManager: 1}
       }, (err, result) => {
         if (err) {
           return reject(err);
@@ -322,7 +343,9 @@ function findRelatedUsersToBusiness(groupId, businessId) {
       ])
       .sort({firstName: 1, lastName: 1})
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         return resolve(result);
       });
@@ -347,7 +370,31 @@ function setAsDriver(groupId, userId, businessId) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
+          return resolve(result);
+        });
+  });
+}
+
+function setAsRelatedUser(groupId, userId, businessId) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .updateOne(
+        {
+          userId: userId,
+          groupId: groupId
+        },
+        {
+          $addToSet: {
+            businessIds: businessId
+          }
+        },
+        (err, result) => {
+          if (err) {
+            return reject(err);
+          }
           return resolve(result);
         });
   });
@@ -366,7 +413,7 @@ function removeAsDriver(groupId, userId, businessId) {
             currentBusinessId: 1
           },
           $pull: {
-            drivenIds: [businessId]
+            drivenIds: {$in: [businessId]}
           }
         },
         (err, result) => {

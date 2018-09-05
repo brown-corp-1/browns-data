@@ -1,9 +1,9 @@
 module.exports = {
-    init,
-    makeBackup,
-    restoreBackup,
-    makeBackupNew,
-    restoreBackupNew
+  init,
+  makeBackup,
+  makeBackupNew,
+  restoreBackup,
+  restoreBackupNew
 };
 
 const fs = require('fs');
@@ -17,157 +17,160 @@ const sys = require('sys');
 const exec = require('child_process').exec;
 
 function init() {
-    setInterval(() => {
-        if (new Date().getHours() === 6) {
-            makeBackup();
-        }
-    }, 3600000); // an hour
+  setInterval(() => {
+    if (new Date().getHours() === 6) {
+      makeBackup();
+    }
+  }, 3600000); // an hour
 
-    setInterval(() => {
-        cleanResetPasswordToken();
-    }, 60000); // each 10 minutes remove reset password token
+  setInterval(() => {
+    cleanResetPasswordToken();
+  }, 60000); // each 10 minutes remove reset password token
 }
 
 function makeBackupNew(skipEmail, callback) {
-    logger.info('making backup');
+  logger.info('making backup');
 
-    const now = new Date();
-    const monthFolder = 'backups/' + now.getFullYear() + '/' + (now.getMonth() + 1) + '/';
-    const backupName = _getDateFolder(now);
-    const dateFolder = monthFolder + backupName;
-    const filename = backupName + '.7z';
-    const runMongodump = 'mongodump ' + _getConnectionString() + ' -o ' + dateFolder;
-    const runZip = '"' + config.brownsData.zipExec + '" a ' + filename + ' ' + config.brownsData.database;
+  const now = new Date();
+  const monthFolder = 'backups/' + now.getFullYear() + '/' + (now.getMonth() + 1) + '/';
+  const backupName = _getDateFolder(now);
+  const dateFolder = monthFolder + backupName;
+  const filename = backupName + '.7z';
+  const runMongodump = 'mongodump ' + _getConnectionString() + ' -o ' + dateFolder;
+  const runZip = '"' + config.brownsData.zipExec + '" a ' + filename + ' ' + config.brownsData.database;
 
-    try {
-        logger.info('Running mongodump');
+  try {
+    logger.info('Running mongodump');
 
-        exec(runMongodump, {cwd: config.brownsData.mongoFolder}, () => {
-            logger.info('Backup was generated on ' + config.brownsData.mongoFolder + dateFolder);
-            logger.info('Running zip');
+    exec(runMongodump, {cwd: config.brownsData.mongoFolder}, () => {
+      logger.info('Backup was generated on ' + config.brownsData.mongoFolder + dateFolder);
+      logger.info('Running zip');
 
-            exec(runZip, {cwd: config.brownsData.mongoFolder + dateFolder}, () => {
-                logger.info('Zip was done');
+      exec(runZip, {cwd: config.brownsData.mongoFolder + dateFolder}, () => {
+        logger.info('Zip was done');
 
-                if (!skipEmail) {
-                    logger.info('Sending email');
-                    const file = fs.readFileSync(config.brownsData.mongoFolder + dateFolder + '/' + filename);
+        if (!skipEmail) {
+          logger.info('Sending email');
+          const file = fs.readFileSync(config.brownsData.mongoFolder + dateFolder + '/' + filename);
 
-                    if (!skipEmail) {
-                        mailer.sendBackup([{
-                            filename: 'backup.bk',
-                            content: file
-                        }]);
-                    }
-                }
+          if (!skipEmail) {
+            mailer.sendBackup([{
+              filename: 'backup.bk',
+              content: file
+            }]);
+          }
+        }
 
-                logger.info('backup ends');
+        logger.info('backup ends');
 
-                if (callback) {
-                    callback();
-                }
-            });
-        });
-    } catch (ex) {
-        logger.info(ex);
-    }
+        if (callback) {
+          callback();
+        }
+      });
+    });
+  } catch (ex) {
+    logger.info(ex);
+  }
 }
 
 function restoreBackupNew(filename, callback) {
-    logger.info('restore backup');
+  logger.info('restore backup');
 
-    const dateFolder = 'restore/' + _getDateFolder(new Date());
-    const runZip = '"' + config.brownsData.zipExec + '" x "' + filename + '" -o"' + config.brownsData.mongoFolder + dateFolder + '"';
-    const runRestore = 'mongorestore ' + _getConnectionString() + ' ' + dateFolder + '/' + config.brownsData.database;
+  const dateFolder = 'restore/' + _getDateFolder(new Date());
+  const runZip = '"' + config.brownsData.zipExec + '" x "' + filename + '" -o"' + config.brownsData.mongoFolder + dateFolder + '"';
+  const runRestore = 'mongorestore ' + _getConnectionString() + ' ' + dateFolder + '/' + config.brownsData.database;
 
-    logger.info('unzipping ', filename, config.brownsData.mongoFolder + '/' + dateFolder);
+  logger.info('unzipping ', filename, config.brownsData.mongoFolder + '/' + dateFolder);
 
-    //VALIDAR SI EL ARCHIVO EXISTE
+  if (!fs.existsSync(filename)) {
     exec(runZip, () => {
-        // make a backup before restore
-        makeBackupNew(true, () => {
-            logger.info('dropping database');
-            db.dropDatabase(() => {
-                logger.info('restoring');
-                exec(runRestore, {cwd: config.brownsData.mongoFolder}, () => {
-                    logger.info('restore was done');
+      // make a backup before restore
+      makeBackupNew(true, () => {
+        logger.info('dropping database');
+        db.dropDatabase(() => {
+          logger.info('restoring');
+          exec(runRestore, {cwd: config.brownsData.mongoFolder}, () => {
+            logger.info('restore was done');
 
-                    if (callback) {
-                        callback();
-                    }
-                });
-            });
+            if (callback) {
+              callback();
+            }
+          });
         });
+      });
     });
+  } else {
+    logger.info('file ' + filename + ' doesnt exist');
+  }
 }
 
 function makeBackup() {
-    logger.info('making backup');
+  logger.info('making backup');
 
-    const now = new Date();
-    const yearFolder = config.brownsData.backupFolder + '/' + now.getFullYear();
-    const monthFolder = yearFolder + '/' + (now.getMonth() + 1) + '/';
-    const filename = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + '_' + now.getHours() + '-' + now.getMinutes() + '.bk';
+  const now = new Date();
+  const yearFolder = config.brownsData.backupFolder + '/' + now.getFullYear();
+  const monthFolder = yearFolder + '/' + (now.getMonth() + 1) + '/';
+  const filename = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + '_' + now.getHours() + '-' + now.getMinutes() + '.bk';
 
-    try {
-        util.createFolder(config.brownsData.backupFolder);
-        util.createFolder(yearFolder);
-        util.createFolder(monthFolder);
+  try {
+    util.createFolder(config.brownsData.backupFolder);
+    util.createFolder(yearFolder);
+    util.createFolder(monthFolder);
 
-        logger.info('generating file ' + filename);
+    logger.info('generating file ' + filename);
 
-        backup({
-            uri: config.brownsData.db,
-            root: monthFolder,
-            tar: filename,
-            callback: () => {
-                logger.info('backup file: ', monthFolder + filename);
-                const file = fs.readFileSync(monthFolder + '/' + filename);
+    backup({
+      uri: config.brownsData.db,
+      root: monthFolder,
+      tar: filename,
+      callback: () => {
+        logger.info('backup file: ', monthFolder + filename);
+        const file = fs.readFileSync(monthFolder + '/' + filename);
 
-                mailer.sendBackup([{
-                    filename: 'backup.bk',
-                    content: file
-                }]);
-            }
-        });
-    } catch (ex) {
-        logger.info(ex);
-    }
+        mailer.sendBackup([{
+          filename: 'backup.bk',
+          content: file
+        }]);
+      }
+    });
+  } catch (ex) {
+    logger.info(ex);
+  }
 }
 
 function restoreBackup(dir, filename, callback) {
-    logger.info('restore backup - BROWN');
-    const root = config.brownsData.backupFolder + '/' + dir;
+  logger.info('restore backup - BROWN');
+  const root = config.brownsData.backupFolder + '/' + dir;
 
-    restore({
-        uri: config.brownsData.db,
-        root: root,
-        tar: filename,
-        drop: true,
-        callback: (msg) => {
-            logger.info('Restore status', msg);
+  restore({
+    uri: config.brownsData.db,
+    root: root,
+    tar: filename,
+    drop: true,
+    callback: (msg) => {
+      logger.info('Restore status', msg);
 
-            if (callback) {
-                callback();
-            }
-        }
-    });
+      if (callback) {
+        callback();
+      }
+    }
+  });
 }
 
 function _getConnectionString() {
-    return '--host ' + config.brownsData.host +
-        ' --db ' + config.brownsData.database +
-        ' --port ' + config.brownsData.port +
-        ' -u ' + config.brownsData.user +
-        ' -p ' + config.brownsData.pass +
-        ' --authenticationDatabase ' + config.brownsData.adminDatabase;
+  return '--host ' + config.brownsData.host +
+    ' --db ' + config.brownsData.database +
+    ' --port ' + config.brownsData.port +
+    ' -u ' + config.brownsData.user +
+    ' -p ' + config.brownsData.pass +
+    ' --authenticationDatabase ' + config.brownsData.adminDatabase
 }
 
 function _getDateFolder(now) {
-    return now.getFullYear() + '-' +
-        (now.getMonth() + 1) + '-' +
-        now.getDate() + '_' +
-        now.getHours() + '-' +
-        now.getMinutes() + '-' +
-        now.getSeconds();
+  return now.getFullYear() + '-' +
+    (now.getMonth() + 1) + '-' +
+    now.getDate() + '_' +
+    now.getHours() + '-' +
+    now.getMinutes() + '-' +
+    now.getSeconds();
 }

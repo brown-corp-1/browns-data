@@ -20,39 +20,39 @@ const businessGroupModel = require('./src/business-group/business-group.model');
 const permissionModel = require('./src/permission/permission.model');
 
 module.exports = {
-    init,
-    logger,
-    util,
-    typeOfTransaction,
-    businessModel,
-    transactionModel,
-    userModel,
-    emailModel,
-    emailType,
-    groupModel,
-    businessGroupModel,
-    emailState,
-    groupConstants,
-    permissionModel,
-    job
+  init,
+  logger,
+  util,
+  typeOfTransaction,
+  businessModel,
+  transactionModel,
+  userModel,
+  emailModel,
+  emailType,
+  groupModel,
+  businessGroupModel,
+  emailState,
+  groupConstants,
+  permissionModel,
+  job
 };
 
 function init(config) {
-    global.config = config;
+  global.config = config;
 
-    return new Promise((resolve, reject) => {
-        MongoClient.connect(config.brownsData.db, {useNewUrlParser: true }, (err, client) => {
-            if (err) {
-                return reject('Mongo: cannot connect: ', err);
-            }
+  return new Promise((resolve, reject) => {
+    MongoClient.connect(config.brownsData.db, {useNewUrlParser: true}, (err, client) => {
+      if (err) {
+        return reject('Mongo: cannot connect: ', err);
+      }
 
-            global.db = client.db('cabsManager');
+      global.db = client.db('cabsManager');
 
-            if (config.brownsData.makeBackup) {
-                job.init();
-            }
+      if (config.brownsData.makeBackup) {
+        job.init();
+      }
 
-            return resolve('Connected');
-        });
+      return resolve('Connected');
     });
+  });
 }
