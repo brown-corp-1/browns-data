@@ -217,8 +217,7 @@ function getBusinessesByOwner(userId) {
         },
         {
           $match: {
-            owners: {$in: [userId]},
-            active: true
+            owners: {$in: [userId]}
           }
         },
         {
@@ -257,8 +256,7 @@ function getOwners(id) {
         },
         {
           $match: {
-            _id: id,
-            active: true
+            _id: id
           }
         },
         {
