@@ -42,7 +42,7 @@ function getByEmail(email) {
           email: email
         },
         {
-          $project: {
+          projection: {
             password: 1
           }
         })
