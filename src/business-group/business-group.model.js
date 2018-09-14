@@ -103,40 +103,22 @@ function get(userId, groupId) {
 function getCurrentDriversPerBusiness(groupId, businessId) {
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
-      .aggregate([
+      .find(
         {
-          $match: {
-            groupId,
-            drivenIds: {$in: [businessId]}
+          groupId,
+          drivenIds: {$in: [businessId]}
+        },
+        {
+          projection: {
+            _id: 0,
+            userId: 1
           }
-        },
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'userId',
-            foreignField: '_id',
-            as: 'user'
-          }
-        },
-        {
-          $unwind: {path: '$user', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $replaceRoot: {newRoot: '$user'}
-        },
-        {
-          $project: {
-            firstName: 1,
-            lastName: 1,
-            photo: 1
-          }
-        }
-      ])
-      .sort({firstName: 1})
+        })
       .toArray((err, result) => {
         if (err) {
           return reject(err);
         }
+
         return resolve(result);
       });
   });
@@ -166,7 +148,7 @@ function getCurrentManagers(groupId, businessId) {
         if (result && result.length) {
           return resolve([result[0].userId]);
         }
-        
+
         return resolve([]);
       });
   });
