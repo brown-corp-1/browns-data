@@ -82,27 +82,6 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
           $match: match
         },
         {
-          $lookup: driverLookup
-        },
-        {
-          $unwind: {path: '$driver', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $lookup: targetLookup
-        },
-        {
-          $unwind: {path: '$target', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $lookup: fromLookup
-        },
-        {
-          $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $lookup: businessLookup
-        },
-        {
           $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
         },
         {
@@ -119,24 +98,9 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
               _id: '$business._id',
               name: '$business.name'
             },
-            driver: {
-              _id: '$driver._id',
-              firstName: '$driver.firstName',
-              lastName: '$driver.lastName',
-              photo: '$driver.photo'
-            },
-            target: {
-              _id: '$target._id',
-              firstName: '$target.firstName',
-              lastName: '$target.lastName',
-              photo: '$target.photo'
-            },
-            from: {
-              _id: '$from._id',
-              firstName: '$from.firstName',
-              lastName: '$from.lastName',
-              photo: '$from.photo'
-            }
+            driver: 1,
+            target: 1,
+            from: 1
           }
         }
       ])
@@ -162,24 +126,6 @@ function getRecord(transactionId) {
           }
         },
         {
-          $lookup: driverLookup
-        },
-        {
-          $unwind: {path: '$driver', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $lookup: targetLookup
-        },
-        {
-          $unwind: {path: '$target', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $lookup: fromLookup
-        },
-        {
-          $unwind: {path: '$from', preserveNullAndEmptyArrays: true}
-        },
-        {
           $lookup: businessLookup
         },
         {
@@ -201,24 +147,9 @@ function getRecord(transactionId) {
               _id: '$business._id',
               name: '$business.name'
             },
-            driver: {
-              _id: '$driver._id',
-              firstName: '$driver.firstName',
-              lastName: '$driver.lastName',
-              photo: '$driver.photo'
-            },
-            target: {
-              _id: '$target._id',
-              firstName: '$target.firstName',
-              lastName: '$target.lastName',
-              photo: '$target.photo'
-            },
-            from: {
-              _id: '$from._id',
-              firstName: '$from.firstName',
-              lastName: '$from.lastName',
-              photo: '$from.photo'
-            }
+            driver: 1,
+            target: 1,
+            from: 1
           }
         }
       ])
@@ -235,7 +166,7 @@ function getRecord(transactionId) {
 function add(transaction) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
-      .insert(transaction, (err, result) => {
+      .insertOne(transaction, (err, result) => {
         if (err) {
           return reject(err);
         }
@@ -274,18 +205,20 @@ function remove(transactionId) {
             .find(
               queryCondition,
               {
-                owner: 1,
-                admin: 1,
-                type: 1,
-                businessId: 1,
-                date: 1,
-                value: 1,
-                driver: 1,
-                description: 1,
-                driverSaving: 1,
-                lstImages: 1,
-                target: 1,
-                from: 1
+                projection: {
+                  owner: 1,
+                  admin: 1,
+                  type: 1,
+                  businessId: 1,
+                  date: 1,
+                  value: 1,
+                  driver: 1,
+                  description: 1,
+                  driverSaving: 1,
+                  lstImages: 1,
+                  target: 1,
+                  from: 1
+                }
               })
             .toArray((findErr, result) => {
               if (findErr) {
@@ -451,47 +384,6 @@ function getTotalUsersBalance(userIds, admin) {
             active: true
           }
         },
-        /* {
-             $lookup: {
-                 from: 'businessGroups',
-                 localField: 'businessId',
-                 foreignField: admin ? 'managedIds' : 'businessIds',
-                 as: 'businessGroup'
-             }
-         },
-         {
-             $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
-         },
-         {
-             $addFields: {
-                 matches: {$eq: ['$businessGroup.userId', '$owner']}
-             }
-         },
-         {
-             $match: {matches: true}
-         },
-         {
-             $lookup: groupLookup
-         },
-         {
-             $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
-         },
-         {
-             $match: {
-                 'group.active': true
-             }
-         },
-         {
-             $lookup: businessLookup
-         },
-         {
-             $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
-         },
-         {
-             $match: {
-                 'business.active': true
-             }
-         },*/
         {
           $group: {
             _id: {
@@ -572,21 +464,9 @@ function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
         },
         {
           $match: {
-            'group._id': groupId/*,
-                        'group.active': true*/
+            'group._id': groupId
           }
         },
-        /*{
-            $lookup: businessLookup
-        },
-        {
-            $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
-        },
-        {
-            $match: {
-                'business.active': true
-            }
-        },*/
         {
           $group: {
             _id: {

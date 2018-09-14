@@ -130,23 +130,10 @@ function getBusinessWithOwners(id) {
           }
         },
         {
-          $lookup: {
-            from: 'users',
-            localField: 'owners',
-            foreignField: '_id',
-            as: 'owners'
-          }
-        },
-        {
           $project: {
             name: 1,
             photo: 1,
-            owners: {
-              _id: 1,
-              firstName: 1,
-              lastName: 1,
-              photo: 1
-            }
+            owners: 1
           }
         }
       ])
@@ -170,25 +157,12 @@ function getBusinessesWithOwners(businessIds) {
           }
         },
         {
-          $lookup: {
-            from: 'users',
-            localField: 'owners',
-            foreignField: '_id',
-            as: 'owners'
-          }
-        },
-        {
           $sort: {name: 1}
         },
         {
           $project: {
             name: 1,
-            owners: {
-              _id: 1,
-              firstName: 1,
-              lastName: 1,
-              photo: 1
-            },
+            owners: 1,
             active: 1
           }
         }
@@ -217,7 +191,8 @@ function getBusinessesByOwner(userId) {
         },
         {
           $match: {
-            owners: {$in: [userId]}
+            owners: {$in: [userId]},
+            active: true
           }
         },
         {
