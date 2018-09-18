@@ -43,7 +43,8 @@ function getByEmail(email) {
         },
         {
           projection: {
-            password: 1
+            password: 1,
+            resetPassword: 1
           }
         })
       .limit(1)
