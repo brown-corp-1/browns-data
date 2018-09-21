@@ -52,34 +52,10 @@ const groupLookup = {
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
   return new Promise((resolve, reject) => {
-    let match = {
-      businessId: businessId,
-      owner: userId,
-      admin: admin,
-      active: true
-    };
-
-    if (transactionTypes && transactionTypes.length) {
-      match.type = {$in: transactionTypes};
-    }
-
-    if (startDate) {
-      match.date = {$gte: startDate};
-    }
-
-    if (endDate) {
-      match.date = match.date || {};
-      match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
-    }
-
-    if (description) {
-      match.description = {$regex: description, $options: '$i'};
-    }
-
     db.collection('transactions')
       .aggregate([
         {
-          $match: match
+          $match: _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description)
         },
         {
           $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
@@ -165,6 +141,8 @@ function getRecord(transactionId) {
 
 function add(transaction) {
   return new Promise((resolve, reject) => {
+    transaction.normalizedDescription = util.removeAccents(transaction.description);
+
     db.collection('transactions')
       .insertOne(transaction, (err, result) => {
         if (err) {
@@ -249,37 +227,13 @@ function addMany(transactions) {
 
 function getBalance(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
   return new Promise((resolve, reject) => {
-    let match = {
-      businessId: businessId,
-      owner: userId,
-      admin: admin,
-      active: true
-    };
-
-    if (transactionTypes && transactionTypes.length) {
-      match.type = {$in: transactionTypes};
-    }
-
-    if (startDate) {
-      match.date = {$gte: startDate};
-    }
-
-    if (endDate) {
-      match.date = match.date || {};
-      match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
-    }
-
-    if (description) {
-      match.description = {$regex: description, $options: '$i'};
-    }
-
     db.collection('transactions')
       .aggregate([
         {
           $sort: {date: -1}
         },
         {
-          $match: match
+          $match: _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description)
         },
         {
           $group: {
@@ -609,4 +563,32 @@ function getUserBalancePerDay(businessId, userId, admin) {
         return resolve(util.consolidateDailyBalances(result));
       });
   });
+}
+
+function _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
+  let match = {
+    businessId,
+    owner: userId,
+    admin,
+    active: true
+  };
+
+  if (transactionTypes && transactionTypes.length) {
+    match.type = {$in: transactionTypes};
+  }
+
+  if (startDate) {
+    match.date = {$gte: startDate};
+  }
+
+  if (endDate) {
+    match.date = match.date || {};
+    match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
+  }
+
+  if (description) {
+    match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
+  }
+
+  return match;
 }
