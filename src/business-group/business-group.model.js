@@ -286,22 +286,30 @@ function removeUserFromGroup(userId, groupId, fromManager) {
   });
 }
 
-function activeUser(userId, groupId) {
+function activeUser(userId, groupId, activeByManager) {
+  let updates = {
+    $set: {active: true}
+  };
+
+  if (activeByManager) {
+    updates.$unset = {removedFromManager: 1};
+  }
+
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
-      .updateOne({
-        groupId,
-        userId
-      }, {
-        $set: {active: true},
-        $unset: {removedFromManager: 1}
-      }, (err, result) => {
-        if (err) {
-          return reject(err);
-        }
+      .updateOne(
+        {
+          groupId,
+          userId
+        },
+        updates,
+        (err, result) => {
+          if (err) {
+            return reject(err);
+          }
 
-        return resolve(result);
-      });
+          return resolve(result);
+        });
   });
 }
 
