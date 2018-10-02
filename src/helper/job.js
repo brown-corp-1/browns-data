@@ -19,7 +19,7 @@ const exec = require('child_process').exec;
 function init() {
   setInterval(() => {
     if (new Date().getHours() === 6) {
-      makeBackup();
+      makeBackupNew();
     }
   }, 3600000); // an hour
 
@@ -82,7 +82,7 @@ function restoreBackupNew(filename, callback) {
 
   logger.info('unzipping ', filename, config.brownsData.mongoFolder + '/' + dateFolder);
 
-  if (!fs.existsSync(filename)) {
+  if (fs.existsSync(filename)) {
     exec(runZip, () => {
       // make a backup before restore
       makeBackupNew(true, () => {
