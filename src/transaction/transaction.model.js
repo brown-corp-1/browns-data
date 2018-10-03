@@ -212,6 +212,10 @@ function remove(transactionId) {
 function addMany(transactions) {
   return new Promise((resolve, reject) => {
     if (transactions && transactions.length) {
+      transactions.map((transaction) => {
+        transaction.normalizedDescription = util.removeAccents(transaction.description);
+      });
+
       db.collection('transactions')
         .insertMany(transactions, (err, result) => {
           if (err) {
