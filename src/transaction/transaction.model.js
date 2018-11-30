@@ -141,7 +141,7 @@ function getRecord(transactionId) {
 
 function add(transaction) {
   return new Promise((resolve, reject) => {
-    transaction.normalizedDescription = util.removeAccents(transaction.description);
+    transaction.normalizedDescription = util.removeAccents(transaction.description || '');
 
     db.collection('transactions')
       .insertOne(transaction, (err, result) => {
