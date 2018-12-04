@@ -27,9 +27,10 @@ function add(business) {
   });
 }
 
-function update(businessId, name, owners, photo) {
+function update(businessId, type, name, owners, photo) {
   return new Promise((resolve, reject) => {
     let newBusiness = {
+      type,
       name,
       owners
     };
@@ -133,7 +134,8 @@ function getBusinessWithOwners(id) {
           $project: {
             name: 1,
             photo: 1,
-            owners: 1
+            owners: 1,
+            type: 1
           }
         }
       ])
@@ -163,7 +165,8 @@ function getBusinessesWithOwners(businessIds) {
           $project: {
             name: 1,
             owners: 1,
-            active: 1
+            active: 1,
+            type: 1
           }
         }
       ])

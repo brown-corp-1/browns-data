@@ -6,6 +6,7 @@ const util = require('./src/helper/util');
 const job = require('./src/helper/job');
 
 // @constants
+const {businessType} = require('./src/business/business.constant');
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 const {emailState, emailType} = require('./src/email/email.constant');
 const {groupConstants} = require('./src/group/group.constant');
@@ -24,6 +25,7 @@ module.exports = {
   logger,
   util,
   typeOfTransaction,
+  businessType,
   businessModel,
   transactionModel,
   userModel,
