@@ -43,6 +43,7 @@ function getByEmail(email) {
         },
         {
           projection: {
+            googlePhoto: 1,
             password: 1,
             resetPassword: 1
           }
@@ -89,7 +90,8 @@ function login(userId, password) {
       .project({
         firstName: 1,
         lastName: 1,
-        photo: 1
+        photo: 1,
+        googlePhoto: 1
       })
       .limit(1)
       .toArray((err, result) => {
@@ -160,7 +162,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto) {
   return new Promise((resolve, reject) => {
     let data = {
       firstName,
@@ -175,6 +177,10 @@ function update(userId, firstName, lastName, password, photo, photos) {
       data.photo = photo;
     }
 
+    if (googlePhoto) {
+      data.googlePhoto = googlePhoto;
+    }
+
     db.collection('users')
       .updateOne(
         {
@@ -182,7 +188,7 @@ function update(userId, firstName, lastName, password, photo, photos) {
         },
         {
           $set: data,
-          $push: {
+          $addToSet: {
             photos: {
               $each: photos
             }

@@ -2,11 +2,13 @@ module.exports = {
   arrayBalanceToObject,
   balancesToUsers,
   createFolder,
+  createFolders,
   consolidateDailyBalances,
   consolidateMontlyBalances,
   generateImages,
   putImage,
   removeAccents,
+  saveStream,
   saveImages
 };
 
@@ -196,32 +198,45 @@ function saveImages(entityId, images, imagesPath) {
 }
 
 function putImage(url, image) {
+  if (image) {
+    return createFolders(url)
+      .then((path) => {
+        fs.writeFileSync(path, image.buffer);
+      });
+  }
+}
+
+function createFolders(url) {
   return new Promise((resolve, reject) => {
-    if (url && image) {
+    if (url) {
       try {
+        let path = publicFolder;
+        let urlParts = url.split('/');
+        let urlPartsLen = urlParts.length - 1;
+
         if (!fs.existsSync(url)) {
           if (url.startsWith(resourcesFolder.replace(publicFolder, ''))) {
-            let urlParts = url.split('/');
-            let urlPartsLen = urlParts.length - 1;
-            let path = publicFolder;
-
             for (let j = 0; j < urlPartsLen; j++) {
               path += urlParts[j] + '/';
               createFolder(path);
             }
-
-            fs.writeFileSync(path + urlParts[urlPartsLen], image.buffer);
           }
         }
 
-        return resolve(true);
+        return resolve(path + urlParts[urlPartsLen]);
       } catch (ex) {
         return reject(ex);
       }
-    } else {
-      return resolve(lstImages);
     }
+
+    return reject();
   });
+}
+
+function saveStream(filename) {
+  filename = publicFolder + filename;
+
+  return fs.createWriteStream(filename);
 }
 
 function generateImages(entityId, imagesCount, imagesPath) {
