@@ -198,12 +198,16 @@ function saveImages(entityId, images, imagesPath) {
 }
 
 function putImage(url, image) {
-  if (image) {
-    return createFolders(url)
-      .then((path) => {
-        fs.writeFileSync(path, image.buffer);
-      });
-  }
+  return new Promise((resolve, reject) => {
+    if (image) {
+      return createFolders(url)
+        .then((path) => {
+          resolve(fs.writeFileSync(path, image.buffer));
+        });
+    }
+
+    return reject();
+  });
 }
 
 function createFolders(url) {
