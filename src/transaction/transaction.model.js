@@ -7,7 +7,6 @@ module.exports = {
   getBalance,
   getUserBalancePerMonth,
   getUserBalancePerDay,
-  getTotalUsersBalancePerGroup,
   getUsersBalance,
   getTotalUsersBalance
 };
@@ -15,39 +14,11 @@ module.exports = {
 const Promise = require('promise');
 const util = require('../helper/util');
 
-const driverLookup = {
-  from: 'users',
-  localField: 'driver',
-  foreignField: '_id',
-  as: 'driver'
-};
-
-const targetLookup = {
-  from: 'users',
-  localField: 'target',
-  foreignField: '_id',
-  as: 'target'
-};
-
-const fromLookup = {
-  from: 'users',
-  localField: 'from',
-  foreignField: '_id',
-  as: 'from'
-};
-
 const businessLookup = {
   from: 'businesses',
   localField: 'businessId',
   foreignField: '_id',
   as: 'business'
-};
-
-const groupLookup = {
-  from: 'groups',
-  localField: 'businessGroup.groupId',
-  foreignField: '_id',
-  as: 'group'
 };
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
