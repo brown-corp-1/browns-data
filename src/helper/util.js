@@ -6,6 +6,7 @@ module.exports = {
   consolidateDailyBalances,
   consolidateMontlyBalances,
   generateImages,
+  getUserBalance,
   putImage,
   removeAccents,
   saveStream,
@@ -120,48 +121,67 @@ function balancesToUsers(userIds, result) {
   userIds.forEach((userId) => {
     const userBalances = result.filter((balance) => balance.userId.toString() === userId.toString());
 
-    if (userBalances && userBalances.length) {
-      const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
-      const expenses = userBalances.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
-      const cashOut = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
-      const cashIn = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
-      const peekAndPlate = userBalances.find((balance) => balance.type === typeOfTransaction.PEAK_AND_PLATE) || {};
-      const stranded = userBalances.find((balance) => balance.type === typeOfTransaction.STRANDED) || {};
-
-      let userBalance = {
-        deposits: deposits && deposits.total ? deposits.total : 0,
-        expenses: expenses && expenses.total ? expenses.total : 0,
-        cashOut: cashOut && cashOut.total ? cashOut.total : 0,
-        cashIn: cashIn && cashIn.total ? cashIn.total : 0,
-        savings: deposits && deposits.savings ? deposits.savings : 0,
-        lastUpdate: new Date(
-          Math.max(
-            deposits.lastUpdate || 0,
-            expenses.lastUpdate || 0,
-            cashOut.lastUpdate || 0,
-            cashIn.lastUpdate || 0,
-            peekAndPlate.lastUpdate || 0,
-            stranded.lastUpdate || 0))
-      };
-
-      userBalance.total = userBalance.deposits + userBalance.cashIn + userBalance.savings -
-        userBalance.cashOut - userBalance.expenses;
-
-      balances[userId] = userBalance;
-    } else {
-      balances[userId] = {
-        deposits: 0,
-        expenses: 0,
-        cashOut: 0,
-        cashIn: 0,
-        savings: 0,
-        total: 0,
-        lastUpdate: new Date()
-      };
-    }
+    balances[userId] = formatBalances(userBalances);
   });
 
   return balances;
+}
+
+function getUserBalance(balances, userId, businessId) {
+  let userBalances;
+
+  if (businessId) {
+    userBalances = balances.filter((balance) => {
+      return balance.userId.toString() === userId.toString() && balance.businessId.toString() === businessId.toString();
+    });
+  } else {
+    userBalances = balances.filter((balance) => {
+      return balance.userId.toString() === userId.toString();
+    });
+  }
+
+  return formatBalances(userBalances);
+}
+
+function formatBalances(userBalances) {
+  if (userBalances && userBalances.length) {
+    const deposits = userBalances.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
+    const expenses = userBalances.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
+    const cashOut = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
+    const cashIn = userBalances.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
+    const peekAndPlate = userBalances.find((balance) => balance.type === typeOfTransaction.PEAK_AND_PLATE) || {};
+    const stranded = userBalances.find((balance) => balance.type === typeOfTransaction.STRANDED) || {};
+
+    let userBalance = {
+      deposits: deposits && deposits.total ? deposits.total : 0,
+      expenses: expenses && expenses.total ? expenses.total : 0,
+      cashOut: cashOut && cashOut.total ? cashOut.total : 0,
+      cashIn: cashIn && cashIn.total ? cashIn.total : 0,
+      savings: deposits && deposits.savings ? deposits.savings : 0,
+      lastUpdate: new Date(
+        Math.max(
+          deposits.lastUpdate || 0,
+          expenses.lastUpdate || 0,
+          cashOut.lastUpdate || 0,
+          cashIn.lastUpdate || 0,
+          peekAndPlate.lastUpdate || 0,
+          stranded.lastUpdate || 0))
+    };
+
+    userBalance.total = userBalance.deposits + userBalance.cashIn + userBalance.savings - userBalance.cashOut - userBalance.expenses;
+
+    return userBalance;
+  }
+
+  return {
+    deposits: 0,
+    expenses: 0,
+    cashOut: 0,
+    cashIn: 0,
+    savings: 0,
+    total: 0,
+    lastUpdate: new Date()
+  };
 }
 
 function saveImages(entityId, images, imagesPath) {

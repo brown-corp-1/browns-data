@@ -12,6 +12,7 @@ const {emailState, emailType} = require('./src/email/email.constant');
 const {groupConstants} = require('./src/group/group.constant');
 
 // @models
+const balanceModel = require('./src/balance/balance.model');
 const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
@@ -25,6 +26,7 @@ module.exports = {
   logger,
   util,
   typeOfTransaction,
+  balanceModel,
   businessConstants,
   businessModel,
   transactionModel,
