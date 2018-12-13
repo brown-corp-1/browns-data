@@ -9,6 +9,7 @@ module.exports = {
   getUsersInformation,
   login,
   resetPassword,
+  setSpotlight,
   update,
   updatePassword
 };
@@ -91,7 +92,8 @@ function login(userId, password) {
         firstName: 1,
         lastName: 1,
         photo: 1,
-        googlePhoto: 1
+        googlePhoto: 1,
+        spotlights: 1
       })
       .limit(1)
       .toArray((err, result) => {
@@ -124,7 +126,8 @@ function getInvite(userId) {
           firstName: 1,
           lastName: 1,
           email: 1,
-          password: 1
+          password: 1,
+          spotlights: 1
         })
       .limit(1)
       .toArray((err, result) => {
@@ -192,6 +195,26 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
             photos: {
               $each: photos
             }
+          }
+        },
+        (err) => {
+          if (err) { return reject(err);}
+
+          return resolve(true);
+        });
+  });
+}
+
+function setSpotlight(userId, spotlightKey) {
+  return new Promise((resolve, reject) => {
+    db.collection('users')
+      .updateOne(
+        {
+          _id: userId
+        },
+        {
+          $addToSet: {
+            spotlights: spotlightKey
           }
         },
         (err) => {
