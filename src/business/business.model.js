@@ -271,7 +271,8 @@ function getBusinessesInformation(ids) {
         },
         {
           name: 1,
-          photo: 1
+          photo: 1,
+          type: 1
         })
       .toArray((err, result) => {
         if (err) {
