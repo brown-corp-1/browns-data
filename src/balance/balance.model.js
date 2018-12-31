@@ -249,14 +249,19 @@ function setBalances(userIds, groupId) {
             }
 
             // inserta los nuevos balances
-            db.collection('balances')
-              .insertMany(result, (err, result) => {
-                if (err) {
-                  return reject(err);
-                }
+            if (result.length) {
+              // inserta los nuevos balances
+              db.collection('balances')
+                .insertMany(result, (err, result) => {
+                  if (err) {
+                    return reject(err);
+                  }
 
-                return resolve(true);
-              });
+                  return resolve(true);
+                });
+            } else {
+              return resolve(true);
+            }
           });
       });
   });
