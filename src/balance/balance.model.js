@@ -243,16 +243,15 @@ function setBalances(userIds, groupId) {
             userId: {
               $in: userIds
             }
-          }, (removeErr, removeResult) => {
+          }, (removeErr) => {
             if (removeErr) {
               return reject(removeErr);
             }
 
-            // inserta los nuevos balances
             if (result.length) {
-              // inserta los nuevos balances
+              // insert new balances
               db.collection('balances')
-                .insertMany(result, (err, result) => {
+                .insertMany(result, (err) => {
                   if (err) {
                     return reject(err);
                   }
