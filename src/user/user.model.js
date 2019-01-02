@@ -11,6 +11,7 @@ module.exports = {
   resetPassword,
   setSpotlight,
   update,
+  updateLoginInfo,
   updatePassword
 };
 
@@ -155,7 +156,8 @@ function getUsersInformation(ids) {
           lastName: 1,
           photo: 1,
           email: 1,
-          resetPassword: 1
+          resetPassword: 1,
+          notificationToken: 1
         })
       .toArray((err, result) => {
         if (err) { return reject(err); }
@@ -198,7 +200,7 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
           }
         },
         (err) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(true);
         });
@@ -218,7 +220,7 @@ function setSpotlight(userId, spotlightKey) {
           }
         },
         (err) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(true);
         });
@@ -241,7 +243,7 @@ function resetPassword(email) {
           }
         },
         (err) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(true);
         });
@@ -264,7 +266,7 @@ function updatePassword(resetToken, password) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(result);
         });
@@ -301,6 +303,32 @@ function cleanResetPasswordToken() {
           $unset: {
             resetPassword: 1
           }
+        },
+        (err, result) => {
+          if (err) { return reject(err); }
+
+          return resolve(result);
+        });
+  });
+}
+
+function updateLoginInfo(userId, notificationToken) {
+  return new Promise((resolve, reject) => {
+    let data = {
+      lastLogin: new Date()
+    };
+
+    if (notificationToken) {
+      data.notificationToken = notificationToken;
+    }
+
+    db.collection('users')
+      .updateOne(
+        {
+          _id: userId
+        },
+        {
+          $set: data
         },
         (err, result) => {
           if (err) { return reject(err); }

@@ -243,20 +243,24 @@ function setBalances(userIds, groupId) {
             userId: {
               $in: userIds
             }
-          }, (removeErr, removeResult) => {
+          }, (removeErr) => {
             if (removeErr) {
               return reject(removeErr);
             }
 
-            // inserta los nuevos balances
-            db.collection('balances')
-              .insertMany(result, (err, result) => {
-                if (err) {
-                  return reject(err);
-                }
+            if (result.length) {
+              // insert new balances
+              db.collection('balances')
+                .insertMany(result, (err) => {
+                  if (err) {
+                    return reject(err);
+                  }
 
-                return resolve(true);
-              });
+                  return resolve(true);
+                });
+            } else {
+              return resolve(true);
+            }
           });
       });
   });

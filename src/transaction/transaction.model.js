@@ -94,6 +94,7 @@ function getRecord(transactionId) {
               _id: '$business._id',
               name: '$business.name'
             },
+            groupId: 1,
             driver: 1,
             target: 1,
             from: 1
@@ -159,6 +160,7 @@ function remove(transactionId) {
                   admin: 1,
                   type: 1,
                   businessId: 1,
+                  groupId: 1,
                   date: 1,
                   value: 1,
                   driver: 1,
