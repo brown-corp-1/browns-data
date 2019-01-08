@@ -97,7 +97,8 @@ function getRecord(transactionId) {
             groupId: 1,
             driver: 1,
             target: 1,
-            from: 1
+            from: 1,
+            active: 1
           }
         }
       ])
