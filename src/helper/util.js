@@ -14,6 +14,7 @@ module.exports = {
 };
 
 const fs = require('fs');
+const sharp = require('sharp');
 const {typeOfTransaction} = require('../transaction/transaction.constant');
 const uuid = require('uuid');
 const publicFolder = 'public/';
@@ -184,7 +185,7 @@ function formatBalances(userBalances) {
   };
 }
 
-function saveImages(entityId, images, imagesPath) {
+function saveImages(entityId, images, imagesPath, renditions) {
   let lstImages = imagesPath || [];
 
   return new Promise((resolve, reject) => {
@@ -202,9 +203,33 @@ function saveImages(entityId, images, imagesPath) {
 
         images.forEach((img) => {
           const imageId = uuid.v4();
+          const filename = galleyFolder + '/' + imageId + '.png';
 
           lstImages.push(galleyFolder.replace(publicFolder, '') + '/' + imageId + '.png');
-          fs.writeFileSync(galleyFolder + '/' + imageId + '.png', img.buffer);
+          fs.writeFileSync(filename, img.buffer);
+
+          if (renditions && renditions.length) {
+            renditions.forEach((rendition) => {
+              const dimensions = rendition.split('x');
+              const width = parseInt(dimensions[0]);
+              const height = parseInt(dimensions[1]);
+              const renditionFile = galleyFolder + '/' + imageId + '_' + width + '_' + height + '.png';
+
+              sharp(filename)
+                .resize(width, height)
+                .max()
+                .crop(sharp.strategy.attention)
+                .withoutEnlargement()
+                .jpeg({
+                  quality: 95,
+                  chromaSubsampling: '4:4:4'
+                })
+                .toFile(renditionFile)
+                .then(() => {
+                  resolve(renditionFile);
+                });
+            });
+          }
         });
 
         return resolve(lstImages);
