@@ -242,7 +242,8 @@ function setBalances(userIds, groupId) {
           .removeMany({
             userId: {
               $in: userIds
-            }
+            },
+            groupId
           }, (removeErr) => {
             if (removeErr) {
               return reject(removeErr);
