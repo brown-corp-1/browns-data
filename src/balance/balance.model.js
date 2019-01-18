@@ -28,7 +28,7 @@ function getBalancePerUser(userIds, admin) {
             },
             lastUpdate: {$first: '$lastUpdate'},
             driverSaving: {
-              $sum: '$driverSaving'
+              $sum: '$savings'
             },
             total: {
               $sum: '$total'
@@ -41,7 +41,7 @@ function getBalancePerUser(userIds, admin) {
             userId: '$_id.userId',
             type: '$_id.type',
             lastUpdate: '$lastUpdate',
-            savings: '$saving',
+            savings: '$driverSaving',
             total: '$total'
           }
         }
@@ -87,7 +87,7 @@ function getBalancePerBusiness(businessIds, userIds, admin) {
             },
             lastUpdate: {$first: '$lastUpdate'},
             driverSaving: {
-              $sum: '$driverSaving'
+              $sum: '$savings'
             },
             total: {
               $sum: '$total'
@@ -101,7 +101,7 @@ function getBalancePerBusiness(businessIds, userIds, admin) {
             businessId: '$_id.businessId',
             type: '$_id.type',
             lastUpdate: '$lastUpdate',
-            savings: '$saving',
+            savings: '$driverSaving',
             total: '$total'
           }
         }
@@ -143,7 +143,7 @@ function getBalancePerGroup(groupId, userIds, admin) {
             },
             lastUpdate: {$first: '$lastUpdate'},
             driverSaving: {
-              $sum: '$driverSaving'
+              $sum: '$savings'
             },
             total: {
               $sum: '$total'
@@ -156,7 +156,7 @@ function getBalancePerGroup(groupId, userIds, admin) {
             userId: '$_id.userId',
             type: '$_id.type',
             lastUpdate: '$lastUpdate',
-            savings: '$saving',
+            savings: '$driverSaving',
             total: '$total'
           }
         }
