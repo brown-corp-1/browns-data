@@ -291,14 +291,11 @@ function saveStream(filename) {
 function generateImages(entityId, newImages, imagesPath) {
   const galleyFolder = resourcesFolder + entityId + '/images/' + uuid.v4();
   let lstImages = imagesPath || [];
-  let i = 0;
 
-  if (newImages && newImages.length) {
-    let length = newImages.length;
-
-    for (; i < length; i++) {
-      lstImages.splice(newImages[i], 0, galleyFolder.replace(publicFolder, '') + '/' + uuid.v4() + '.png');
-    }
+  if (newImages) {
+    newImages.forEach((index) => {
+      lstImages.splice(index, 0, galleyFolder.replace(publicFolder, '') + '/' + uuid.v4() + '.png');
+    });
   }
 
   return lstImages;
