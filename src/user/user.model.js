@@ -12,6 +12,7 @@ module.exports = {
   setSpotlight,
   update,
   updateLoginInfo,
+  unassignNotificationToken,
   updatePassword
 };
 
@@ -329,6 +330,26 @@ function updateLoginInfo(userId, notificationToken) {
         },
         {
           $set: data
+        },
+        (err, result) => {
+          if (err) { return reject(err); }
+
+          return resolve(result);
+        });
+  });
+}
+
+function unassignNotificationToken(notificationToken) {
+  return new Promise((resolve, reject) => {
+    db.collection('users')
+      .updateMany(
+        {
+          notificationToken
+        },
+        {
+          $set: {
+            notificationToken: ''
+          }
         },
         (err, result) => {
           if (err) { return reject(err); }
