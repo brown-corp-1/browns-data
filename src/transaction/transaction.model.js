@@ -157,6 +157,7 @@ function remove(transactionId) {
               queryCondition,
               {
                 projection: {
+                  userId: 1,
                   owner: 1,
                   admin: 1,
                   type: 1,
