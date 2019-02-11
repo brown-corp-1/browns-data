@@ -48,7 +48,8 @@ function getByEmail(email) {
           projection: {
             googlePhoto: 1,
             password: 1,
-            resetPassword: 1
+            resetPassword: 1,
+            hasLoggedIn: 1
           }
         })
       .limit(1)
@@ -316,7 +317,8 @@ function cleanResetPasswordToken() {
 function updateLoginInfo(userId, notificationToken) {
   return new Promise((resolve, reject) => {
     let data = {
-      lastLogin: new Date()
+      lastLogin: new Date(),
+      hasLoggedIn: true
     };
 
     if (notificationToken) {

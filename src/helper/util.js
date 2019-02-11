@@ -207,29 +207,7 @@ function saveImages(entityId, images, imagesPath, renditions) {
 
           lstImages.push(galleyFolder.replace(publicFolder, '') + '/' + imageId + '.png');
           fs.writeFileSync(filename, img.buffer);
-
-          if (renditions && renditions.length) {
-            renditions.forEach((rendition) => {
-              const dimensions = rendition.split('x');
-              const width = parseInt(dimensions[0]);
-              const height = parseInt(dimensions[1]);
-              const renditionFile = galleyFolder + '/' + imageId + '_' + width + '_' + height + '.png';
-
-              sharp(filename)
-                .resize(width, height)
-                .max()
-                .crop(sharp.strategy.attention)
-                .withoutEnlargement()
-                .jpeg({
-                  quality: 95,
-                  chromaSubsampling: '4:4:4'
-                })
-                .toFile(renditionFile)
-                .then(() => {
-                  resolve(renditionFile);
-                });
-            });
-          }
+          _saveRenditions(filename, renditions);
         });
 
         return resolve(lstImages);
@@ -282,10 +260,13 @@ function createFolders(url) {
   });
 }
 
-function saveStream(filename) {
+function saveStream(filename, renditions) {
   filename = publicFolder + filename;
 
-  return fs.createWriteStream(filename);
+  return fs.createWriteStream(filename)
+    .on('finish', () => {
+      _saveRenditions(filename, renditions);
+    });
 }
 
 function generateImages(entityId, newImages, imagesPath) {
@@ -315,4 +296,28 @@ function removeAccents(string) {
     .replace(new RegExp('[ùúûü]', 'g'), 'u')
     .replace(new RegExp('[ýÿ]', 'g'), 'y')
     .replace(new RegExp('\\W', 'g'), '');
+}
+
+function _saveRenditions(filename, renditions) {
+  if (renditions && renditions.length) {
+    renditions.forEach((rendition) => {
+      const dimensions = rendition.split('x');
+      const width = parseInt(dimensions[0]);
+      const height = parseInt(dimensions[1]);
+      const renditionFile = filename.replace('.png', '_' + width + '_' + height + '.png');
+
+      sharp(filename)
+        .resize(width, height)
+        .max()
+        .crop(sharp.strategy.attention)
+        .withoutEnlargement()
+        .jpeg({
+          quality: 95,
+          chromaSubsampling: '4:4:4'
+        })
+        .toFile(renditionFile)
+        .then(() => {
+        });
+    });
+  }
 }
