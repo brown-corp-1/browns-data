@@ -163,7 +163,7 @@ function _getConnectionString() {
     ' --port ' + config.brownsData.port +
     ' -u ' + config.brownsData.user +
     ' -p ' + config.brownsData.pass +
-    ' --authenticationDatabase ' + config.brownsData.adminDatabase
+    ' --authenticationDatabase ' + config.brownsData.adminDatabase;
 }
 
 function _getDateFolder(now) {

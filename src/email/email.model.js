@@ -42,7 +42,8 @@ function getUnsent() {
           balance: 1,
           state: 1,
           oldValue: 1,
-          localBalance: 1
+          localBalance: 1,
+          groupBalance: 1
         })
       .limit(100)
       .toArray((err, result) => {

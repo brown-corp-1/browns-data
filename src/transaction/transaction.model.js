@@ -7,7 +7,6 @@ module.exports = {
   getBalance,
   getUserBalancePerMonth,
   getUserBalancePerDay,
-  getTotalUsersBalancePerGroup,
   getUsersBalance,
   getTotalUsersBalance
 };
@@ -15,39 +14,11 @@ module.exports = {
 const Promise = require('promise');
 const util = require('../helper/util');
 
-const driverLookup = {
-  from: 'users',
-  localField: 'driver',
-  foreignField: '_id',
-  as: 'driver'
-};
-
-const targetLookup = {
-  from: 'users',
-  localField: 'target',
-  foreignField: '_id',
-  as: 'target'
-};
-
-const fromLookup = {
-  from: 'users',
-  localField: 'from',
-  foreignField: '_id',
-  as: 'from'
-};
-
 const businessLookup = {
   from: 'businesses',
   localField: 'businessId',
   foreignField: '_id',
   as: 'business'
-};
-
-const groupLookup = {
-  from: 'groups',
-  localField: 'businessGroup.groupId',
-  foreignField: '_id',
-  as: 'group'
 };
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
@@ -123,9 +94,11 @@ function getRecord(transactionId) {
               _id: '$business._id',
               name: '$business.name'
             },
+            groupId: 1,
             driver: 1,
             target: 1,
-            from: 1
+            from: 1,
+            active: 1
           }
         }
       ])
@@ -184,10 +157,12 @@ function remove(transactionId) {
               queryCondition,
               {
                 projection: {
+                  userId: 1,
                   owner: 1,
                   admin: 1,
                   type: 1,
                   businessId: 1,
+                  groupId: 1,
                   date: 1,
                   value: 1,
                   driver: 1,
@@ -340,89 +315,6 @@ function getTotalUsersBalance(userIds, admin) {
             owner: {$in: userIds},
             admin: admin,
             active: true
-          }
-        },
-        {
-          $group: {
-            _id: {
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 1,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
-          }
-        }
-      ])
-      .toArray((err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(util.balancesToUsers(userIds, result));
-      });
-  });
-}
-
-function getTotalUsersBalancePerGroup(userIds, groupId, admin) {
-  return new Promise((resolve, reject) => {
-    db.collection('transactions')
-      .aggregate([
-        {
-          $sort: {date: -1}
-        },
-        {
-          $match: {
-            owner: {$in: userIds},
-            admin: admin,
-            active: true
-          }
-        },
-        {
-          $lookup: {
-            from: 'businessGroups',
-            localField: 'businessId',
-            foreignField: admin ? 'managedIds' : 'businessIds',
-            as: 'businessGroup'
-          }
-        },
-        {
-          $unwind: {path: '$businessGroup', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $addFields: {
-            matches: {$eq: ['$businessGroup.userId', '$owner']}
-          }
-        },
-        {
-          $match: {
-            matches: true,
-            'businessGroup.groupId': groupId
-          }
-        },
-        {
-          $lookup: groupLookup
-        },
-        {
-          $unwind: {path: '$group', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $match: {
-            'group._id': groupId
           }
         },
         {

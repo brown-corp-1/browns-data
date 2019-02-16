@@ -6,11 +6,14 @@ const util = require('./src/helper/util');
 const job = require('./src/helper/job');
 
 // @constants
+const businessConstants = require('./src/business/business.constant');
 const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 const {emailState, emailType} = require('./src/email/email.constant');
 const {groupConstants} = require('./src/group/group.constant');
+const userConstants = require('./src/user/user.constant');
 
 // @models
+const balanceModel = require('./src/balance/balance.model');
 const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
@@ -24,6 +27,9 @@ module.exports = {
   logger,
   util,
   typeOfTransaction,
+  balanceModel,
+  businessConstants,
+  userConstants,
   businessModel,
   transactionModel,
   userModel,

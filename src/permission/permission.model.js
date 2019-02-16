@@ -148,7 +148,7 @@ function canGetTransaction(userId, transactionId, admin) {
   return new Promise((resolve, reject) => {
     let filters = {
       _id: transactionId,
-      owner: userId,
+      owner: userId
     };
 
     if (admin !== undefined) {

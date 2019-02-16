@@ -9,7 +9,10 @@ module.exports = {
   getUsersInformation,
   login,
   resetPassword,
+  setSpotlight,
   update,
+  updateLoginInfo,
+  unassignNotificationToken,
   updatePassword
 };
 
@@ -43,8 +46,10 @@ function getByEmail(email) {
         },
         {
           projection: {
+            googlePhoto: 1,
             password: 1,
-            resetPassword: 1
+            resetPassword: 1,
+            hasLoggedIn: 1
           }
         })
       .limit(1)
@@ -89,7 +94,9 @@ function login(userId, password) {
       .project({
         firstName: 1,
         lastName: 1,
-        photo: 1
+        photo: 1,
+        googlePhoto: 1,
+        spotlights: 1
       })
       .limit(1)
       .toArray((err, result) => {
@@ -122,7 +129,8 @@ function getInvite(userId) {
           firstName: 1,
           lastName: 1,
           email: 1,
-          password: 1
+          password: 1,
+          spotlights: 1
         })
       .limit(1)
       .toArray((err, result) => {
@@ -150,7 +158,8 @@ function getUsersInformation(ids) {
           lastName: 1,
           photo: 1,
           email: 1,
-          resetPassword: 1
+          resetPassword: 1,
+          notificationToken: 1
         })
       .toArray((err, result) => {
         if (err) { return reject(err); }
@@ -160,7 +169,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto) {
   return new Promise((resolve, reject) => {
     let data = {
       firstName,
@@ -175,6 +184,10 @@ function update(userId, firstName, lastName, password, photo, photos) {
       data.photo = photo;
     }
 
+    if (googlePhoto) {
+      data.googlePhoto = googlePhoto;
+    }
+
     db.collection('users')
       .updateOne(
         {
@@ -182,14 +195,34 @@ function update(userId, firstName, lastName, password, photo, photos) {
         },
         {
           $set: data,
-          $push: {
+          $addToSet: {
             photos: {
               $each: photos
             }
           }
         },
         (err) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
+
+          return resolve(true);
+        });
+  });
+}
+
+function setSpotlight(userId, spotlightKey) {
+  return new Promise((resolve, reject) => {
+    db.collection('users')
+      .updateOne(
+        {
+          _id: userId
+        },
+        {
+          $addToSet: {
+            spotlights: spotlightKey
+          }
+        },
+        (err) => {
+          if (err) { return reject(err); }
 
           return resolve(true);
         });
@@ -212,7 +245,7 @@ function resetPassword(email) {
           }
         },
         (err) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(true);
         });
@@ -235,7 +268,7 @@ function updatePassword(resetToken, password) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err);}
+          if (err) { return reject(err); }
 
           return resolve(result);
         });
@@ -271,6 +304,53 @@ function cleanResetPasswordToken() {
         {
           $unset: {
             resetPassword: 1
+          }
+        },
+        (err, result) => {
+          if (err) { return reject(err); }
+
+          return resolve(result);
+        });
+  });
+}
+
+function updateLoginInfo(userId, notificationToken) {
+  return new Promise((resolve, reject) => {
+    let data = {
+      lastLogin: new Date(),
+      hasLoggedIn: true
+    };
+
+    if (notificationToken) {
+      data.notificationToken = notificationToken;
+    }
+
+    db.collection('users')
+      .updateOne(
+        {
+          _id: userId
+        },
+        {
+          $set: data
+        },
+        (err, result) => {
+          if (err) { return reject(err); }
+
+          return resolve(result);
+        });
+  });
+}
+
+function unassignNotificationToken(notificationToken) {
+  return new Promise((resolve, reject) => {
+    db.collection('users')
+      .updateMany(
+        {
+          notificationToken
+        },
+        {
+          $set: {
+            notificationToken: ''
           }
         },
         (err, result) => {
