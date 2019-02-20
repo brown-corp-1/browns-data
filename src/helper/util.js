@@ -181,7 +181,7 @@ function formatBalances(userBalances) {
     cashIn: 0,
     savings: 0,
     total: 0,
-    lastUpdate: new Date()
+    lastUpdate: new Date(0)
   };
 }
 
