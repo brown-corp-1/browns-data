@@ -6,9 +6,7 @@ module.exports = {
   getRecord,
   getBalance,
   getUserBalancePerMonth,
-  getUserBalancePerDay,
-  getUsersBalance,
-  getTotalUsersBalance
+  getUserBalancePerDay
 };
 
 const Promise = require('promise');
@@ -247,108 +245,6 @@ function getBalance(businessId, userId, admin, transactionTypes, startDate, endD
         }
 
         return resolve(util.arrayBalanceToObject(result));
-      });
-  });
-}
-
-function getUsersBalance(businessId, userIds, admin) {
-  return new Promise((resolve, reject) => {
-    db.collection('transactions')
-      .aggregate([
-        {
-          $sort: {date: -1}
-        },
-        {
-          $match: {
-            businessId: businessId,
-            owner: {$in: userIds},
-            admin: admin,
-            active: true
-          }
-        },
-        {
-          $group: {
-            _id: {
-              businessId: '$businessId',
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
-          }
-        }
-      ])
-      .toArray((err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(util.balancesToUsers(userIds, result));
-      });
-  });
-}
-
-function getTotalUsersBalance(userIds, admin) {
-  return new Promise((resolve, reject) => {
-    db.collection('transactions')
-      .aggregate([
-        {
-          $sort: {date: -1}
-        },
-        {
-          $match: {
-            owner: {$in: userIds},
-            admin: admin,
-            active: true
-          }
-        },
-        {
-          $group: {
-            _id: {
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 1,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
-          }
-        }
-      ])
-      .toArray((err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(util.balancesToUsers(userIds, result));
       });
   });
 }
