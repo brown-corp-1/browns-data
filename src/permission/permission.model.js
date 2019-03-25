@@ -1,12 +1,14 @@
 module.exports = {
   isManager,
-  hasGroup,
+  hasGroups,
   hasBusiness,
   hasBusinessAnyMode,
   canGetTransaction,
+  canRemoveTransaction,
   canReadBusiness
 };
 
+const _ = require('lodash');
 const Promise = require('promise');
 const projection = {
   projection: {
@@ -35,13 +37,17 @@ function isManager(userId, groupId) {
   });
 }
 
-function hasGroup(userId, groupId) {
+function hasGroups(userId, groupIds) {
   return new Promise((resolve, reject) => {
+    if (!Array.isArray(groupIds)) {
+      groupIds = [groupIds];
+    }
+
     db.collection('businessGroups')
       .find(
         {
           userId,
-          groupId
+          groupId: {$in: groupIds}
         },
         projection
       )
@@ -84,31 +90,44 @@ function hasBusiness(userId, businessId, admin) {
   });
 }
 
-function hasBusinessAnyMode(userId, businessId) {
+function hasBusinessAnyMode(userId, businessIds) {
   return new Promise((resolve, reject) => {
+    if (!Array.isArray(businessIds)) {
+      businessIds = [businessIds];
+    }
+
     db.collection('businessGroups')
       .find(
         {
           userId,
           $or: [
             {
-              managedIds: {$in: [businessId]}
+              managedIds: {$in: businessIds}
             },
             {
 
-              businessIds: {$in: [businessId]}
+              businessIds: {$in: businessIds}
             }
           ]
         },
-        projection
+        {
+          _id: 0,
+          managedIds: 1,
+          businessId: 1
+        }
       )
-      .limit(1)
       .toArray((err, result) => {
         if (err) {
           return reject(err);
         }
 
-        return resolve(!!result.length);
+        const resultSize = _.intersectionWith(_.flatten(
+          _.concat(
+            _.map(result, 'managedIds'),
+            _.map(result, 'businessIds')
+          )), businessIds, _.isEqual).length;
+
+        return resolve(resultSize === businessIds.length);
       });
   });
 }
@@ -167,6 +186,33 @@ function canGetTransaction(userId, transactionId, admin) {
         }
 
         return resolve(!!result.length);
+      });
+  });
+}
+
+function canRemoveTransaction(userId, transactionIds, admin) {
+  return new Promise((resolve, reject) => {
+    let filters = {
+      _id: {$in: transactionIds},
+      owner: userId,
+      parentId: {$exists: false}
+    };
+
+    if (admin !== undefined) {
+      filters.admin = admin;
+    }
+
+    db.collection('transactions')
+      .find(
+        filters,
+        projection
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result.length === transactionIds.length);
       });
   });
 }

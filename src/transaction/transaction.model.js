@@ -124,14 +124,18 @@ function add(transaction) {
   });
 }
 
-function remove(transactionId) {
+function remove(transactionIds) {
+  if (!Array.isArray(transactionIds)) {
+    transactionIds = [transactionIds];
+  }
+
   const queryCondition = {
     $or: [
       {
-        _id: transactionId
+        _id: {$in: transactionIds}
       },
       {
-        parentId: transactionId
+        parentId: {$in: transactionIds}
       }
     ]
   };

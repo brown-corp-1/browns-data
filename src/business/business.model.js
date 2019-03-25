@@ -56,12 +56,12 @@ function update(businessId, type, name, owners, photo) {
   });
 }
 
-function remove(businessId) {
+function remove(businessIds) {
   return new Promise((resolve, reject) => {
     db.collection('businesses')
-      .updateOne(
+      .updateMany(
         {
-          _id: businessId
+          _id: {$in: businessIds}
         },
         {
           $set: {
@@ -77,12 +77,12 @@ function remove(businessId) {
   });
 }
 
-function active(businessId) {
+function active(businessIds) {
   return new Promise((resolve, reject) => {
     db.collection('businesses')
-      .updateOne(
+      .updateMany(
         {
-          _id: businessId
+          _id: {$in: businessIds}
         },
         {
           $set: {
