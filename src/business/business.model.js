@@ -165,6 +165,7 @@ function getBusinessesWithOwners(businessIds) {
           $project: {
             name: 1,
             owners: 1,
+            photo: 1,
             active: 1,
             type: 1
           }
