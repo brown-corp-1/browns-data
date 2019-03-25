@@ -8,6 +8,7 @@ module.exports = {
 };
 
 const Promise = require('promise');
+const {parseToArray} = require('../helper/util');
 
 function add(group) {
   return new Promise((resolve, reject) => {
@@ -47,8 +48,8 @@ function remove(groupId) {
   return _updateGroupActive(groupId, false);
 }
 
-function active(groupId) {
-  return _updateGroupActive(groupId, true);
+function active(groupIds) {
+  return _updateGroupActive(groupIds, true);
 }
 
 function addUserToGroup(managerId, groupId, userId) {
@@ -118,12 +119,14 @@ function find(userId) {
   });
 }
 
-function _updateGroupActive(groupId, isActive) {
+function _updateGroupActive(groupIds, isActive) {
   return new Promise((resolve, reject) => {
+    groupIds = parseToArray(groupIds);
+
     db.collection('groups')
       .updateOne(
         {
-          _id: groupId
+          _id: {$in: groupIds}
         },
         {
           $set: {
