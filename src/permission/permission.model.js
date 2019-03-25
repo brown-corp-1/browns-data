@@ -10,6 +10,7 @@ module.exports = {
 
 const _ = require('lodash');
 const Promise = require('promise');
+const {parseToArray} = require('../helper/util');
 const projection = {
   projection: {
     _id: 1
@@ -39,9 +40,7 @@ function isManager(userId, groupId) {
 
 function hasGroups(userId, groupIds) {
   return new Promise((resolve, reject) => {
-    if (!Array.isArray(groupIds)) {
-      groupIds = [groupIds];
-    }
+    groupIds = parseToArray(groupIds);
 
     db.collection('businessGroups')
       .find(
@@ -92,9 +91,7 @@ function hasBusiness(userId, businessId, admin) {
 
 function hasBusinessAnyMode(userId, businessIds) {
   return new Promise((resolve, reject) => {
-    if (!Array.isArray(businessIds)) {
-      businessIds = [businessIds];
-    }
+    businessIds = parseToArray(businessIds);
 
     db.collection('businessGroups')
       .find(

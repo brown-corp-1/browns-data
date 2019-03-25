@@ -125,9 +125,7 @@ function add(transaction) {
 }
 
 function remove(transactionIds) {
-  if (!Array.isArray(transactionIds)) {
-    transactionIds = [transactionIds];
-  }
+  transactionIds = util.parseToArray(transactionIds);
 
   const queryCondition = {
     $or: [

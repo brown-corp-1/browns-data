@@ -20,6 +20,7 @@ module.exports = {
 };
 
 const Promise = require('promise');
+const {parseToArray} = require('../helper/util');
 
 function add(userId, groupId, managedBusinessId, businessId, drivenId) {
   return new Promise((resolve, reject) => {
@@ -270,9 +271,7 @@ function removeUserFromGroup(userIds, groupId, fromManager) {
       removingType = {active: false};
     }
 
-    if (!Array.isArray(userIds)) {
-      userIds = [userIds];
-    }
+    userIds = parseToArray(userIds);
 
     db.collection('businessGroups')
       .updateMany({
@@ -299,9 +298,7 @@ function activeUser(userId, groupIds, activeByManager) {
     updates.$unset = {removedFromManager: 1};
   }
 
-  if (!Array.isArray(groupIds)) {
-    groupIds = [groupIds];
-  }
+  groupIds = parseToArray(groupIds);
 
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
@@ -432,9 +429,7 @@ function setAsRelatedUser(groupId, userId, businessId) {
 
 function removeAsDriver(groupId, userIds, businessId) {
   return new Promise((resolve, reject) => {
-    if (!Array.isArray(userIds)) {
-      userIds = [userIds];
-    }
+    userIds = parseToArray(userIds);
 
     db.collection('businessGroups')
       .updateMany(
@@ -461,9 +456,7 @@ function removeAsDriver(groupId, userIds, businessId) {
 
 function removeUserAsDriverInGroup(userIds, groupId) {
   return new Promise((resolve, reject) => {
-    if (!Array.isArray(userIds)) {
-      userIds = [userIds];
-    }
+    userIds = parseToArray(userIds);
 
     db.collection('businessGroups')
       .updateOne(

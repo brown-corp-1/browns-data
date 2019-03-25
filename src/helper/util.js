@@ -302,6 +302,14 @@ function removeAccents(string) {
   return string;
 }
 
+function parseToArray(value) {
+  if (!Array.isArray(value)) {
+    return [value];
+  }
+
+  return value;
+}
+
 function _saveRenditions(filename, renditions) {
   if (renditions && renditions.length) {
     renditions.forEach((rendition) => {

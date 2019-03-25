@@ -8,6 +8,7 @@ module.exports = {
 };
 
 const Promise = require('promise');
+const {parseToArray} = require('../helper/util');
 
 function add(group) {
   return new Promise((resolve, reject) => {
@@ -120,9 +121,7 @@ function find(userId) {
 
 function _updateGroupActive(groupIds, isActive) {
   return new Promise((resolve, reject) => {
-    if (!Array.isArray(groupIds)) {
-      groupIds = [groupIds];
-    }
+    groupIds = parseToArray(groupIds);
 
     db.collection('groups')
       .updateOne(
