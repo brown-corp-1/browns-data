@@ -9,6 +9,7 @@ module.exports = {
   getUserBalance,
   putImage,
   removeAccents,
+  parseToArray,
   saveStream,
   saveImages
 };
