@@ -171,10 +171,15 @@ function getUsersInformation(ids) {
 
 function update(userId, firstName, lastName, password, photo, photos, googlePhoto) {
   return new Promise((resolve, reject) => {
-    let data = {
-      firstName,
-      lastName
-    };
+    let data = {};
+
+    if (firstName) {
+      data.firstName = firstName;
+    }
+
+    if (lastName) {
+      data.lastName = lastName;
+    }
 
     if (password) {
       data.password = password;
