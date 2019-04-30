@@ -5,6 +5,7 @@ module.exports = {
   existResetToken,
   get,
   getByEmail,
+  getByFacebookId,
   getInvite,
   getUsersInformation,
   login,
@@ -39,10 +40,48 @@ function get(userId) {
 
 function getByEmail(email) {
   return new Promise((resolve, reject) => {
+    if (!email) {
+      reject();
+    }
+
     db.collection('users')
       .find(
         {
-          email: email
+          email
+        },
+        {
+          projection: {
+            googlePhoto: 1,
+            password: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
+          result[0].password = !!result[0].password;
+
+          return resolve(result[0]);
+        }
+
+        return resolve(null);
+      });
+  });
+}
+
+function getByFacebookId(facebookId) {
+  return new Promise((resolve, reject) => {
+    if (!facebookId) {
+      reject();
+    }
+
+    db.collection('users')
+      .find(
+        {
+          facebookId
         },
         {
           projection: {
@@ -94,6 +133,7 @@ function login(userId, password) {
       .project({
         firstName: 1,
         lastName: 1,
+        email: 1,
         photo: 1,
         googlePhoto: 1,
         spotlights: 1
@@ -130,7 +170,9 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           password: 1,
-          spotlights: 1
+          spotlights: 1,
+          facebookId: 1,
+          googleId: 1
         })
       .limit(1)
       .toArray((err, result) => {
@@ -169,7 +211,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto, googleId, facebookId) {
   return new Promise((resolve, reject) => {
     let data = {};
 
@@ -191,6 +233,14 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
 
     if (googlePhoto) {
       data.googlePhoto = googlePhoto;
+    }
+
+    if (googleId) {
+      data.googleId = googleId;
+    }
+
+    if (facebookId) {
+      data.facebookId = facebookId;
     }
 
     db.collection('users')
