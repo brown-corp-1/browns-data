@@ -6,6 +6,7 @@ module.exports = {
   get,
   getByEmail,
   getByFacebookId,
+  getByGoogleId,
   getInvite,
   getUsersInformation,
   login,
@@ -86,7 +87,6 @@ function getByFacebookId(facebookId) {
         {
           projection: {
             googlePhoto: 1,
-            password: 1,
             resetPassword: 1,
             hasLoggedIn: 1
           }
@@ -96,8 +96,37 @@ function getByFacebookId(facebookId) {
         if (err) { return reject(err); }
 
         if (result.length) {
-          result[0].password = !!result[0].password;
+          return resolve(result[0]);
+        }
 
+        return resolve(null);
+      });
+  });
+}
+
+function getByGoogleId(googleId) {
+  return new Promise((resolve, reject) => {
+    if (!googleId) {
+      reject();
+    }
+
+    db.collection('users')
+      .find(
+        {
+          googleId
+        },
+        {
+          projection: {
+            googlePhoto: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
           return resolve(result[0]);
         }
 
@@ -213,7 +242,12 @@ function getUsersInformation(ids) {
 
 function update(userId, firstName, lastName, password, photo, photos, googlePhoto, googleId, facebookId) {
   return new Promise((resolve, reject) => {
-    let data = {};
+    let data = {},
+      arrayData = {
+        photos: {
+          $each: photos
+        }
+      };
 
     if (firstName) {
       data.firstName = firstName;
@@ -236,11 +270,15 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
     }
 
     if (googleId) {
-      data.googleId = googleId;
+      arrayData = {
+        googleId
+      };
     }
 
     if (facebookId) {
-      data.facebookId = facebookId;
+      arrayData = {
+        facebookId
+      };
     }
 
     db.collection('users')
@@ -250,11 +288,7 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
         },
         {
           $set: data,
-          $addToSet: {
-            photos: {
-              $each: photos
-            }
-          }
+          $addToSet: arrayData
         },
         (err) => {
           if (err) { return reject(err); }
