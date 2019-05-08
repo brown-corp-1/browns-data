@@ -29,7 +29,13 @@ function get(userId) {
           _id: userId
         },
         {
-          password: 0
+          projection: {
+            firstName: 1,
+            lastName: 1,
+            email: 1,
+            spotlights: 1,
+            photo: 1
+          }
         })
       .limit(1)
       .toArray((err, result) => {
@@ -53,6 +59,7 @@ function getByEmail(email) {
         {
           projection: {
             googlePhoto: 1,
+            facebookPhoto: 1,
             password: 1,
             resetPassword: 1,
             hasLoggedIn: 1
@@ -86,7 +93,7 @@ function getByFacebookId(facebookId) {
         },
         {
           projection: {
-            googlePhoto: 1,
+            facebookPhoto: 1,
             resetPassword: 1,
             hasLoggedIn: 1
           }
@@ -164,7 +171,6 @@ function login(userId, password) {
         lastName: 1,
         email: 1,
         photo: 1,
-        googlePhoto: 1,
         spotlights: 1
       })
       .limit(1)
@@ -240,7 +246,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto, googleId, facebookId) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId) {
   return new Promise((resolve, reject) => {
     let data = {},
       arrayData = {
@@ -249,11 +255,8 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
         }
       };
 
-    if (firstName) {
+    if (firstName || lastName) {
       data.firstName = firstName;
-    }
-
-    if (lastName) {
       data.lastName = lastName;
     }
 
@@ -267,6 +270,10 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
 
     if (googlePhoto) {
       data.googlePhoto = googlePhoto;
+    }
+
+    if (facebookPhoto) {
+      data.facebookPhoto = facebookPhoto;
     }
 
     if (googleId) {
