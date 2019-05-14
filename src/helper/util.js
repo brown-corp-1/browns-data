@@ -9,6 +9,7 @@ module.exports = {
   getUserBalance,
   putImage,
   removeAccents,
+  parseToArray,
   saveStream,
   saveImages
 };
@@ -300,6 +301,14 @@ function removeAccents(string) {
   }
 
   return string;
+}
+
+function parseToArray(value) {
+  if (!Array.isArray(value)) {
+    return [value];
+  }
+
+  return value;
 }
 
 function _saveRenditions(filename, renditions) {

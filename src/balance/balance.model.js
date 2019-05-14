@@ -2,7 +2,8 @@ module.exports = {
   setBalances,
   getBalancePerBusiness,
   getBalancePerGroup,
-  getBalancePerUser
+  getBalancePerUser,
+  getTypeFilter
 };
 
 const Promise = require('promise');
@@ -171,6 +172,53 @@ function getBalancePerGroup(groupId, userIds, admin) {
   });
 }
 
+function getTypeFilter(businessId, userId, admin) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $project: {
+            owner: 1,
+            businessId: 1,
+            active: 1,
+            activeGroup: 1,
+            admin: 1,
+            type: 1
+          }
+        },
+        {
+          $match: {
+            businessId,
+            owner: userId,
+            admin,
+            active: true,
+            activeGroup: true
+          }
+        },
+        {
+          $group: {
+            _id: {
+              type: '$type'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            type: '$_id.type'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
 function setBalances(userIds, groupId) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
@@ -237,7 +285,7 @@ function setBalances(userIds, groupId) {
           return reject(err);
         }
 
-        // elimina los actuales balances
+        // remove currrent balances
         db.collection('balances')
           .removeMany({
             userId: {

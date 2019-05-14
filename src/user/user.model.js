@@ -5,6 +5,8 @@ module.exports = {
   existResetToken,
   get,
   getByEmail,
+  getByFacebookId,
+  getByGoogleId,
   getInvite,
   getUsersInformation,
   login,
@@ -27,7 +29,13 @@ function get(userId) {
           _id: userId
         },
         {
-          password: 0
+          projection: {
+            firstName: 1,
+            lastName: 1,
+            email: 1,
+            spotlights: 1,
+            photo: 1
+          }
         })
       .limit(1)
       .toArray((err, result) => {
@@ -39,14 +47,19 @@ function get(userId) {
 
 function getByEmail(email) {
   return new Promise((resolve, reject) => {
+    if (!email) {
+      reject();
+    }
+
     db.collection('users')
       .find(
         {
-          email: email
+          email
         },
         {
           projection: {
             googlePhoto: 1,
+            facebookPhoto: 1,
             password: 1,
             resetPassword: 1,
             hasLoggedIn: 1
@@ -59,6 +72,68 @@ function getByEmail(email) {
         if (result.length) {
           result[0].password = !!result[0].password;
 
+          return resolve(result[0]);
+        }
+
+        return resolve(null);
+      });
+  });
+}
+
+function getByFacebookId(facebookId) {
+  return new Promise((resolve, reject) => {
+    if (!facebookId) {
+      reject();
+    }
+
+    db.collection('users')
+      .find(
+        {
+          facebookId
+        },
+        {
+          projection: {
+            facebookPhoto: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
+          return resolve(result[0]);
+        }
+
+        return resolve(null);
+      });
+  });
+}
+
+function getByGoogleId(googleId) {
+  return new Promise((resolve, reject) => {
+    if (!googleId) {
+      reject();
+    }
+
+    db.collection('users')
+      .find(
+        {
+          googleId
+        },
+        {
+          projection: {
+            googlePhoto: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
           return resolve(result[0]);
         }
 
@@ -94,8 +169,8 @@ function login(userId, password) {
       .project({
         firstName: 1,
         lastName: 1,
+        email: 1,
         photo: 1,
-        googlePhoto: 1,
         spotlights: 1
       })
       .limit(1)
@@ -130,7 +205,9 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           password: 1,
-          spotlights: 1
+          spotlights: 1,
+          facebookId: 1,
+          googleId: 1
         })
       .limit(1)
       .toArray((err, result) => {
@@ -169,12 +246,19 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId) {
   return new Promise((resolve, reject) => {
-    let data = {
-      firstName,
-      lastName
-    };
+    let data = {},
+      arrayData = {
+        photos: {
+          $each: photos
+        }
+      };
+
+    if (firstName || lastName) {
+      data.firstName = firstName;
+      data.lastName = lastName;
+    }
 
     if (password) {
       data.password = password;
@@ -188,6 +272,22 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
       data.googlePhoto = googlePhoto;
     }
 
+    if (facebookPhoto) {
+      data.facebookPhoto = facebookPhoto;
+    }
+
+    if (googleId) {
+      arrayData = {
+        googleId
+      };
+    }
+
+    if (facebookId) {
+      arrayData = {
+        facebookId
+      };
+    }
+
     db.collection('users')
       .updateOne(
         {
@@ -195,11 +295,7 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
         },
         {
           $set: data,
-          $addToSet: {
-            photos: {
-              $each: photos
-            }
-          }
+          $addToSet: arrayData
         },
         (err) => {
           if (err) { return reject(err); }
