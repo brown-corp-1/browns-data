@@ -147,24 +147,18 @@ function getUserBalance(balances, userId, businessId) {
 }
 
 function getGroupBalance(balances, groupId) {
-  let groupBalances;
-  let adminBalances;
-  let guestBalances;
-
-  adminBalances = balances.filter((balance) => {
+  const adminBalances = balances.filter((balance) => {
     return balance.groupId.toString() === groupId.toString() && balance.admin;
   });
 
-  guestBalances = balances.filter((balance) => {
+  const guestBalances = balances.filter((balance) => {
     return balance.groupId.toString() === groupId.toString() && !balance.admin;
   });
 
-  groupBalances = {
+  return {
     admin: formatBalances(adminBalances),
     guest: formatBalances(guestBalances)
   };
-
-  return groupBalances
 }
 
 function formatBalances(userBalances) {
