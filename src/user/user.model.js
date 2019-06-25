@@ -34,7 +34,8 @@ function get(userId) {
             lastName: 1,
             email: 1,
             spotlights: 1,
-            photo: 1
+            photo: 1,
+            hasLoggedIn: 1
           }
         })
       .limit(1)

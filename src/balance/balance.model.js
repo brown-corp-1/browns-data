@@ -2,6 +2,7 @@ module.exports = {
   setBalances,
   getBalancePerBusiness,
   getBalancePerGroup,
+  getGroupBalancePerUser,
   getBalancePerUser,
   getTypeFilter
 };
@@ -155,6 +156,59 @@ function getBalancePerGroup(groupId, userIds, admin) {
           $project: {
             _id: 0,
             userId: '$_id.userId',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            savings: '$driverSaving',
+            total: '$total'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
+function getGroupBalancePerUser(groupIds, userId) {
+  return new Promise((resolve, reject) => {
+    db.collection('balances')
+      .aggregate([
+        {
+          $sort: {lastUpdate: -1}
+        },
+        {
+          $match: {
+            groupId: {$in: groupIds},
+            userId: userId
+          }
+        },
+        {
+          $group: {
+            _id: {
+              groupId: '$groupId',
+              type: '$type',
+              userId: '$userId',
+              admin: '$admin'
+            },
+            lastUpdate: {$first: '$lastUpdate'},
+            driverSaving: {
+              $sum: '$savings'
+            },
+            total: {
+              $sum: '$total'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.userId',
+            groupId: '$_id.groupId',
+            admin: '$_id.admin',
             type: '$_id.type',
             lastUpdate: '$lastUpdate',
             savings: '$driverSaving',
