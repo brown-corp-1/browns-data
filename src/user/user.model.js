@@ -33,7 +33,6 @@ function get(userId) {
             firstName: 1,
             lastName: 1,
             email: 1,
-            spotlights: 1,
             photo: 1,
             hasLoggedIn: 1
           }
@@ -172,7 +171,7 @@ function login(userId, password) {
         lastName: 1,
         email: 1,
         photo: 1,
-        spotlights: 1
+        hasLoggedIn: 1
       })
       .limit(1)
       .toArray((err, result) => {
@@ -206,7 +205,6 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           password: 1,
-          spotlights: 1,
           facebookId: 1,
           googleId: 1
         })
