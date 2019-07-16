@@ -5,6 +5,7 @@ module.exports = {
   existResetToken,
   get,
   getByEmail,
+  getByEmailOrPhone,
   getByFacebookId,
   getByGoogleId,
   getInvite,
@@ -58,6 +59,51 @@ function getByEmail(email) {
         {
           email
         },
+        {
+          projection: {
+            googlePhoto: 1,
+            facebookPhoto: 1,
+            password: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
+          result[0].password = !!result[0].password;
+
+          return resolve(result[0]);
+        }
+
+        return resolve(null);
+      });
+  });
+}
+
+function getByEmailOrPhone(email, phone) {
+  return new Promise((resolve, reject) => {
+    let match = {
+      $or: []
+    };
+
+    if (!email && !phone) {
+      return reject();
+    }
+
+    if (email) {
+      match.$or.push({email});
+    }
+
+    if (phone) {
+      match.$or.push({phone});
+    }
+
+    db.collection('users')
+      .find(
+        match,
         {
           projection: {
             googlePhoto: 1,
