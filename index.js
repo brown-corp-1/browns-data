@@ -14,6 +14,7 @@ const userConstants = require('./src/user/user.constant');
 
 // @models
 const balanceModel = require('./src/balance/balance.model');
+const tokenModel = require('./src/token/token.model');
 const businessModel = require('./src/business/business.model');
 const emailModel = require('./src/email/email.model');
 const transactionModel = require('./src/transaction/transaction.model');
@@ -27,6 +28,7 @@ module.exports = {
   logger,
   util,
   typeOfTransaction,
+  tokenModel,
   balanceModel,
   businessConstants,
   userConstants,
