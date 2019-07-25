@@ -5,6 +5,7 @@ module.exports = {
   existResetToken,
   get,
   getByEmail,
+  getByEmailOrPhone,
   getByFacebookId,
   getByGoogleId,
   getInvite,
@@ -33,7 +34,9 @@ function get(userId) {
             firstName: 1,
             lastName: 1,
             email: 1,
+            phone: 1,
             photo: 1,
+            spotlights: 1,
             hasLoggedIn: 1
           }
         })
@@ -56,6 +59,51 @@ function getByEmail(email) {
         {
           email
         },
+        {
+          projection: {
+            googlePhoto: 1,
+            facebookPhoto: 1,
+            password: 1,
+            resetPassword: 1,
+            hasLoggedIn: 1
+          }
+        })
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) { return reject(err); }
+
+        if (result.length) {
+          result[0].password = !!result[0].password;
+
+          return resolve(result[0]);
+        }
+
+        return resolve(null);
+      });
+  });
+}
+
+function getByEmailOrPhone(email, phone) {
+  return new Promise((resolve, reject) => {
+    let match = {
+      $or: []
+    };
+
+    if (!email && !phone) {
+      return reject();
+    }
+
+    if (email) {
+      match.$or.push({email});
+    }
+
+    if (phone) {
+      match.$or.push({phone});
+    }
+
+    db.collection('users')
+      .find(
+        match,
         {
           projection: {
             googlePhoto: 1,
@@ -142,14 +190,30 @@ function getByGoogleId(googleId) {
   });
 }
 
-function exist(email) {
+function exist(email, phone) {
   return new Promise((resolve, reject) => {
+    let match = {
+      $or: []
+    };
+
+    if (!email && !phone) {
+      return reject();
+    }
+
+    if (email) {
+      match.$or.push({email});
+    }
+
+    if (phone) {
+      match.$or.push({phone});
+    }
+
     db.collection('users')
       .find(
+        match,
         {
-          email: email
-        },
-        {}
+          _id: 1
+        }
       )
       .limit(1)
       .toArray((err, result) => {
@@ -163,14 +227,19 @@ function login(userId, password) {
   return new Promise((resolve, reject) => {
     db.collection('users')
       .find({
-        email: userId,
+        $or: [
+          {email: userId},
+          {phone: userId}
+        ],
         password: password
       })
       .project({
         firstName: 1,
         lastName: 1,
         email: 1,
+        phone: 1,
         photo: 1,
+        spotlights: 1,
         hasLoggedIn: 1
       })
       .limit(1)
@@ -205,6 +274,7 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           password: 1,
+          spotlights: 1,
           facebookId: 1,
           googleId: 1
         })
@@ -234,6 +304,7 @@ function getUsersInformation(ids) {
           lastName: 1,
           photo: 1,
           email: 1,
+          phone: 1,
           resetPassword: 1,
           notificationToken: 1
         })
