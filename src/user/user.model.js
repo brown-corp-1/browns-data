@@ -381,7 +381,6 @@ function updateImages(userId, photos) {
     let data = {};
     let arrayData = {};
 
-
     if (photos && photos.length) {
       data.photo = photos[0];
 
