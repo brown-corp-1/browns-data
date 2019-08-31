@@ -8,7 +8,8 @@ module.exports = {
   getBusinessesByOwner,
   getBusinessesInformation,
   remove,
-  update
+  update,
+  updateImage
 };
 
 const Promise = require('promise');
@@ -37,6 +38,31 @@ function update(businessId, type, name, owners, photo) {
 
     if (photo) {
       newBusiness.photo = photo;
+    }
+
+    db.collection('businesses')
+      .updateOne(
+        {
+          _id: businessId
+        },
+        {
+          $set: newBusiness
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
+function updateImage(businessId, photo) {
+  return new Promise((resolve, reject) => {
+    let newBusiness = {};
+
+    if (photo && photo.length) {
+      newBusiness.photo = photo[0];
     }
 
     db.collection('businesses')
