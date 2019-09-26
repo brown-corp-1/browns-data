@@ -372,12 +372,14 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   if (startDate) {
-    match.date = {$gte: startDate};
+    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
   }
 
   if (endDate) {
+    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
     match.date = match.date || {};
-    match.date.$lte = new Date(endDate.getTime() + 1000 * 59 * 59 * 23);
+    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
   }
 
   if (description) {
