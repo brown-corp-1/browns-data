@@ -49,7 +49,12 @@ function init(config) {
   global.config = config;
 
   return new Promise((resolve, reject) => {
-    MongoClient.connect(config.brownsData.db, {useNewUrlParser: true}, (err, client) => {
+    const options = {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    };
+
+    MongoClient.connect(config.brownsData.db, options, (err, client) => {
       if (err) {
         return reject('Mongo: cannot connect: ', err);
       }
