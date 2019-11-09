@@ -185,7 +185,7 @@ function getByData(userId, type, businessId, date, creationDate) {
 
 function add(transaction) {
   return new Promise((resolve, reject) => {
-    transaction.normalizedDescription = util.removeAccents(transaction.description || '') + "|" + transaction.distance + "|" + transaction.value;
+    transaction.normalizedDescription = _normalizedDescription(transaction);
 
     db.collection('transactions')
       .insertOne(transaction, (err, result) => {
@@ -288,6 +288,8 @@ function removeChildren(transactionIds) {
 
 function update(transaction) {
   return new Promise((resolve, reject) => {
+    transaction.normalizedDescription = _normalizedDescription(transaction);
+
     db.collection('transactions')
       .replaceOne(
         {
@@ -356,7 +358,7 @@ function addMany(transactions) {
   return new Promise((resolve, reject) => {
     if (transactions && transactions.length) {
       transactions.map((transaction) => {
-        transaction.normalizedDescription = util.removeAccents(transaction.description);
+        transaction.normalizedDescription = _normalizedDescription(transaction);
       });
 
       db.collection('transactions')
@@ -545,7 +547,7 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   if (endDate) {
-    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
     match.date = match.date || {};
     match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
   }
@@ -555,4 +557,8 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   return match;
+}
+
+function _normalizedDescription(transaction) {
+  return util.removeAccents(transaction.description || '') + '|' + transaction.distance + '|' + transaction.value;
 }
