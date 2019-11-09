@@ -560,5 +560,5 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
 }
 
 function _normalizedDescription(transaction) {
-  return util.removeAccents(transaction.description || '') + '|' + transaction.distance + '|' + transaction.value;
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance}|${transaction.value}`;
 }
