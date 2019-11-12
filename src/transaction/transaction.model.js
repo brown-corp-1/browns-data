@@ -31,6 +31,7 @@ const fields = {
   type: 1,
   date: 1,
   creationDate: 1,
+  lastUpdate: 1,
   value: 1,
   distance: 1,
   parentId: 1,
