@@ -127,9 +127,6 @@ function getLastDistance(businessId, date, creationDate) {
             },
             date: {
               $lte: new Date(date.getTime())
-            },
-            creationDate: {
-              $lt: new Date(creationDate.getTime())
             }
           }
         },
@@ -218,42 +215,15 @@ function remove(transactionIds) {
         queryCondition,
         {
           $set: {
+            lastUpdate: new Date(),
             active: false
           }
-        }, (err) => {
+        }, (err, result) => {
           if (err) {
             return reject(err);
           }
 
-          // return deleted transactions
-          db.collection('transactions')
-            .find(
-              queryCondition,
-              {
-                projection: {
-                  userId: 1,
-                  owner: 1,
-                  admin: 1,
-                  type: 1,
-                  businessId: 1,
-                  groupId: 1,
-                  date: 1,
-                  value: 1,
-                  driver: 1,
-                  description: 1,
-                  driverSaving: 1,
-                  lstImages: 1,
-                  target: 1,
-                  from: 1
-                }
-              })
-            .toArray((findErr, result) => {
-              if (findErr) {
-                return reject(findErr);
-              }
-
-              return resolve(result);
-            });
+          return resolve(result);
         });
   });
 }
