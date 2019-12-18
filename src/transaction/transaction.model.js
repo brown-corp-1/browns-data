@@ -107,7 +107,7 @@ function getRecord(transactionId) {
   });
 }
 
-function getLastDistance(businessId, date, creationDate) {
+function getLastDistance(businessId, transactionId, date, creationDate) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
       .aggregate([
@@ -127,6 +127,9 @@ function getLastDistance(businessId, date, creationDate) {
             },
             date: {
               $lte: new Date(date.getTime())
+            },
+            _id: {
+              $ne: transactionId
             }
           }
         },
