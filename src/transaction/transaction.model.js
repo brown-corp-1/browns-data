@@ -1,12 +1,17 @@
 module.exports = {
-  get,
   add,
-  remove,
   addMany,
+  get,
+  getLastDistance,
   getRecord,
+  getByData,
   getBalance,
   getUserBalancePerMonth,
-  getUserBalancePerDay
+  getUserBalancePerDay,
+  getTree,
+  update,
+  remove,
+  removeChildren
 };
 
 const Promise = require('promise');
@@ -17,6 +22,31 @@ const businessLookup = {
   localField: 'businessId',
   foreignField: '_id',
   as: 'business'
+};
+
+const fields = {
+  _id: 1,
+  owner: 1,
+  admin: 1,
+  type: 1,
+  date: 1,
+  creationDate: 1,
+  lastUpdate: 1,
+  value: 1,
+  distance: 1,
+  parentId: 1,
+  lstImages: 1,
+  description: 1,
+  driverSaving: 1,
+  business: {
+    _id: '$business._id',
+    name: '$business.name'
+  },
+  groupId: 1,
+  driver: 1,
+  target: 1,
+  from: 1,
+  active: 1
 };
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
@@ -33,20 +63,7 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
           $sort: {date: -1, creationDate: -1}
         },
         {
-          $project: {
-            type: 1,
-            date: 1,
-            value: 1,
-            description: 1,
-            driverSaving: 1,
-            business: {
-              _id: '$business._id',
-              name: '$business.name'
-            },
-            driver: 1,
-            target: 1,
-            from: 1
-          }
+          $project: fields
         }
       ])
       .skip(pageSize * (pageNumber - 1))
@@ -77,27 +94,84 @@ function getRecord(transactionId) {
           $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
         },
         {
-          $project: {
-            _id: 1,
-            owner: 1,
-            admin: 1,
-            type: 1,
-            date: 1,
-            value: 1,
-            parentId: 1,
-            lstImages: 1,
-            description: 1,
-            driverSaving: 1,
-            business: {
-              _id: '$business._id',
-              name: '$business.name'
-            },
-            groupId: 1,
-            driver: 1,
-            target: 1,
-            from: 1,
-            active: 1
+          $project: fields
+        }
+      ])
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(result[0]);
+      });
+  });
+}
+
+function getLastDistance(businessId, transactionId, date, creationDate) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $sort: {
+            date: -1,
+            creationDate: -1
           }
+        },
+        {
+          $match: {
+            businessId,
+            admin: true,
+            active: true,
+            distance: {
+              $gt: 0
+            },
+            date: {
+              $lte: new Date(date.getTime())
+            },
+            _id: {
+              $ne: transactionId
+            }
+          }
+        },
+        {
+          $project: {
+            distance: 1,
+            date: 1
+          }
+        }
+      ])
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(result[0]);
+      });
+  });
+}
+
+function getByData(userId, type, businessId, date, creationDate) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: {
+            userId,
+            type,
+            businessId,
+            date,
+            creationDate,
+            active: true
+          }
+        },
+        {
+          $lookup: businessLookup
+        },
+        {
+          $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
+        },
+        {
+          $project: fields
         }
       ])
       .limit(1)
@@ -112,7 +186,7 @@ function getRecord(transactionId) {
 
 function add(transaction) {
   return new Promise((resolve, reject) => {
-    transaction.normalizedDescription = util.removeAccents(transaction.description || '');
+    transaction.normalizedDescription = _normalizedDescription(transaction);
 
     db.collection('transactions')
       .insertOne(transaction, (err, result) => {
@@ -144,43 +218,113 @@ function remove(transactionIds) {
         queryCondition,
         {
           $set: {
+            lastUpdate: new Date(),
             active: false
           }
-        }, (err) => {
+        }, (err, result) => {
           if (err) {
             return reject(err);
           }
 
-          // return deleted transactions
-          db.collection('transactions')
-            .find(
-              queryCondition,
-              {
-                projection: {
-                  userId: 1,
-                  owner: 1,
-                  admin: 1,
-                  type: 1,
-                  businessId: 1,
-                  groupId: 1,
-                  date: 1,
-                  value: 1,
-                  driver: 1,
-                  description: 1,
-                  driverSaving: 1,
-                  lstImages: 1,
-                  target: 1,
-                  from: 1
-                }
-              })
-            .toArray((findErr, result) => {
-              if (findErr) {
-                return reject(findErr);
-              }
-
-              return resolve(result);
-            });
+          return resolve(result);
         });
+  });
+}
+
+function removeChildren(transactionIds) {
+  transactionIds = util.parseToArray(transactionIds);
+
+  const queryCondition = {
+    $or: [
+      {
+        parentId: {$in: transactionIds}
+      }
+    ]
+  };
+
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .updateMany(
+        queryCondition,
+        {
+          $set: {
+            active: false
+          }
+        }, (err, result) => {
+          if (err) {
+            return reject(err);
+          }
+
+          return resolve(result);
+        });
+  });
+}
+
+function update(transaction) {
+  return new Promise((resolve, reject) => {
+    transaction.normalizedDescription = _normalizedDescription(transaction);
+
+    db.collection('transactions')
+      .replaceOne(
+        {
+          _id: transaction._id
+        },
+        transaction
+        , (err, result) => {
+          if (err) {
+            return reject(err);
+          }
+
+          return resolve(result);
+        });
+  });
+}
+
+function getTree(transactionIds) {
+  transactionIds = util.parseToArray(transactionIds);
+
+  const queryCondition = {
+    active: true,
+    $or: [
+      {
+        _id: {$in: transactionIds}
+      },
+      {
+        parentId: {$in: transactionIds}
+      }
+    ]
+  };
+
+  return new Promise((resolve, reject) => {
+    // return transactions tree
+    db.collection('transactions')
+      .find(
+        queryCondition,
+        {
+          projection: {
+            userId: 1,
+            owner: 1,
+            admin: 1,
+            type: 1,
+            businessId: 1,
+            groupId: 1,
+            date: 1,
+            value: 1,
+            driver: 1,
+            description: 1,
+            driverSaving: 1,
+            lstImages: 1,
+            target: 1,
+            from: 1
+          }
+        })
+      .toArray((findErr, result) => {
+        if (findErr) {
+          return reject(findErr);
+        }
+
+        return resolve(result);
+      });
   });
 }
 
@@ -188,7 +332,7 @@ function addMany(transactions) {
   return new Promise((resolve, reject) => {
     if (transactions && transactions.length) {
       transactions.map((transaction) => {
-        transaction.normalizedDescription = util.removeAccents(transaction.description);
+        transaction.normalizedDescription = _normalizedDescription(transaction);
       });
 
       db.collection('transactions')
@@ -377,7 +521,7 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   if (endDate) {
-    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
     match.date = match.date || {};
     match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
   }
@@ -387,4 +531,8 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   return match;
+}
+
+function _normalizedDescription(transaction) {
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance}|${transaction.value}`;
 }
