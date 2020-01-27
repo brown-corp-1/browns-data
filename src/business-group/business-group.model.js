@@ -8,9 +8,13 @@ module.exports = {
   addManagedBusiness,
   findRelatedUsersToBusiness,
   findUsersByGroup,
+  findUsers,
   get,
+  getAllBusinesses,
   getCurrentDriversPerBusiness,
+  getDrivers,
   getCurrentManagers,
+  getManagers,
   removeBusiness,
   removeUserFromGroup,
   setAsDriver,
@@ -101,6 +105,22 @@ function get(userId, groupId) {
   });
 }
 
+function getAllBusinesses(userId) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .find({
+        userId
+      })
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
 function getCurrentDriversPerBusiness(groupId, businessId) {
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
@@ -113,6 +133,30 @@ function getCurrentDriversPerBusiness(groupId, businessId) {
           projection: {
             _id: 0,
             userId: 1
+          }
+        })
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
+function getDrivers(businesses) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .find(
+        {
+          drivenIds: {$in: businesses}
+        },
+        {
+          projection: {
+            _id: 0,
+            userId: 1,
+            businessId: '$drivenIds.$'
           }
         })
       .toArray((err, result) => {
@@ -151,6 +195,32 @@ function getCurrentManagers(groupId, businessId) {
         }
 
         return resolve([]);
+      });
+  });
+}
+
+function getManagers(businesses) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .find(
+        {
+          managedIds: {
+            $elemMatch: {$in: businesses}
+          }
+        },
+        {
+          projection: {
+            _id: 0,
+            userId: 1,
+            businessId: '$managedIds.$'
+          }
+        })
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
       });
   });
 }
@@ -203,6 +273,99 @@ function findUsersByGroup(groupId, includeRemovedFromManager) {
         }
 
         return resolve(result);
+      });
+  });
+}
+
+function findUsers(userId) {
+  return new Promise((resolve, reject) => {
+    db.collection('businessGroups')
+      .aggregate([
+        {
+          $match: {
+            userId
+          }
+        },
+        {
+          $project: {
+            groupId: '$groupId'
+          }
+        }
+      ])
+      .toArray((groupErr, groupsResults) => {
+        if (groupErr) {
+          return reject(groupErr);
+        }
+
+        db.collection('businessGroups')
+          .aggregate([
+            {
+              $match: {
+                groupId: {$in: groupsResults.map(r => r.groupId)}
+              }
+            },
+            {
+              $project: {
+                userId: 1,
+                removedFromManager: 1,
+                businessIds: 1,
+                currentBusiness: 1
+              }
+            }
+          ])
+          .toArray((err, businessGroups) => {
+            if (err) {
+              return reject(err);
+            }
+
+            db.collection('users')
+              .aggregate([
+                {
+                  $match: {
+                    _id: {$in: businessGroups.map(r => r.userId)}
+                  }
+                },
+                {
+                  $project: {
+                    _id: 1,
+                    firstName: 1,
+                    lastName: 1,
+                    photo: 1,
+                    phone: 1
+                  }
+                },
+                {
+                  $sort: {firstName: 1, lastName: 1}
+                }
+              ])
+              .toArray((err, users) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                users.forEach((user) => {
+                  user.removedFromManager = user.removedFromManager || false;
+                  user.businesses = user.businesses || [];
+                  user.currentBusinesses = user.currentBusinesses || [];
+
+                  businessGroups.forEach((businessGroup) => {
+                    if (businessGroup.userId.toString() === user._id.toString()) {
+                      user.removedFromManager = businessGroup.removedFromManager || user.removedFromManager;
+
+                      if (businessGroup.businessIds && businessGroup.businessIds.length) {
+                        user.businesses = user.businesses.concat(businessGroup.businessIds);
+                      }
+
+                      if (businessGroup.currentBusiness) {
+                        user.currentBusinesses.push(currentBusiness);
+                      }
+                    }
+                  });
+                })
+
+                return resolve(users);
+              });
+          });
       });
   });
 }
