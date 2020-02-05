@@ -331,7 +331,8 @@ function findUsers(userId) {
                     firstName: 1,
                     lastName: 1,
                     photo: 1,
-                    phone: 1
+                    phone: 1,
+                    email: 1
                   }
                 },
                 {

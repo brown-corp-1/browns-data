@@ -46,6 +46,9 @@ const fields = {
   driver: 1,
   target: 1,
   from: 1,
+  schema: 1,
+  totalFee: 1,
+  driverPercentage: 1,
   active: 1
 };
 
