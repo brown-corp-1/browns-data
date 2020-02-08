@@ -9,6 +9,7 @@ module.exports = {
   getBusinessesInformation,
   remove,
   update,
+  updateLastUpdate,
   updateImage
 };
 
@@ -33,7 +34,8 @@ function update(businessId, type, name, owners, photo) {
     let newBusiness = {
       type,
       name,
-      owners
+      owners,
+      lastUpdate: new Date()
     };
 
     if (photo) {
@@ -57,9 +59,32 @@ function update(businessId, type, name, owners, photo) {
   });
 }
 
+function updateLastUpdate(businessId) {
+  return new Promise((resolve, reject) => {
+    db.collection('businesses')
+      .updateOne(
+        {
+          _id: businessId
+        },
+        {
+          $set: {
+            lastUpdate: new Date()
+          }
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
 function updateImage(businessId, photo) {
   return new Promise((resolve, reject) => {
-    let newBusiness = {};
+    let newBusiness = {
+      lastUpdate: new Date()
+    };
 
     if (photo && photo.length) {
       newBusiness.photo = photo[0];
@@ -91,7 +116,8 @@ function remove(businessIds) {
         },
         {
           $set: {
-            active: false
+            active: false,
+            lastUpdate: new Date()
           }
         },
         (err) => {
@@ -112,7 +138,8 @@ function active(businessIds) {
         },
         {
           $set: {
-            active: true
+            active: true,
+            lastUpdate: new Date()
           }
         },
         (err) => {
@@ -135,7 +162,8 @@ function get(id) {
         },
         {
           name: 1,
-          owners: 1
+          owners: 1,
+          lastUpdate: 1
         })
       .toArray((err, result) => {
         if (err || !result.length) {
@@ -161,7 +189,8 @@ function getBusinessWithOwners(id) {
             name: 1,
             photo: 1,
             owners: 1,
-            type: 1
+            type: 1,
+            lastUpdate: 1
           }
         }
       ])
@@ -193,7 +222,8 @@ function getBusinessesWithOwners(businessIds) {
             owners: 1,
             photo: 1,
             active: 1,
-            type: 1
+            type: 1,
+            lastUpdate: 1
           }
         }
       ])
@@ -233,7 +263,8 @@ function getBusinessesByOwner(userId) {
               firstName: 1,
               lastName: 1,
               photo: 1
-            }
+            },
+            lastUpdate: 1
           }
         }
       ])
@@ -299,7 +330,8 @@ function getBusinessesInformation(ids) {
         {
           name: 1,
           photo: 1,
-          type: 1
+          type: 1,
+          lastUpdate: 1
         })
       .toArray((err, result) => {
         if (err) {
