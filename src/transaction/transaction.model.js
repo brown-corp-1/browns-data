@@ -38,10 +38,7 @@ const fields = {
   lstImages: 1,
   description: 1,
   driverSaving: 1,
-  business: {
-    _id: '$business._id',
-    name: '$business.name'
-  },
+  businessId: 1,
   groupId: 1,
   driver: 1,
   target: 1,

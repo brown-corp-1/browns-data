@@ -45,7 +45,8 @@ function getUnsent() {
           localBalance: 1,
           groupBalance: 1,
           culture: 1,
-          currencyCode: 1
+          currencyCode: 1,
+          timeOffset: 1
         })
       .limit(100)
       .toArray((err, result) => {
