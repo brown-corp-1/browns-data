@@ -345,13 +345,15 @@ function findUsers(userId) {
                 }
 
                 users.forEach((user) => {
-                  user.removedFromManager = user.removedFromManager || false;
+                  const isNotTheSameUser = user._id.toString() !== userId.toString();
+
+                  user.removedFromManager = isNotTheSameUser ? (user.removedFromManager || false) : false;
                   user.businesses = user.businesses || [];
                   user.currentBusinesses = user.currentBusinesses || [];
 
                   businessGroups.forEach((businessGroup) => {
                     if (businessGroup.userId.toString() === user._id.toString()) {
-                      user.removedFromManager = businessGroup.removedFromManager || user.removedFromManager;
+                      user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
 
                       if (businessGroup.businessIds && businessGroup.businessIds.length) {
                         user.businesses = user.businesses.concat(businessGroup.businessIds);
