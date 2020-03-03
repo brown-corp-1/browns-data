@@ -14,6 +14,7 @@ module.exports = {
   resetPassword,
   setSpotlight,
   update,
+  updateCredentials,
   updateImages,
   updateLoginInfo,
   unassignNotificationToken,
@@ -319,12 +320,12 @@ function getUsersInformation(ids) {
 
 function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId) {
   return new Promise((resolve, reject) => {
-    let data = {},
-      arrayData = {
-        photos: {
-          $each: photos
-        }
-      };
+    let data = {};
+    let arrayData = {
+      photos: {
+        $each: photos
+      }
+    };
 
     if (firstName || lastName) {
       data.firstName = firstName;
@@ -370,6 +371,38 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
         },
         (err) => {
           if (err) { return reject(err); }
+
+          return resolve(true);
+        });
+  });
+}
+
+function updateCredentials(userId, credentials) {
+  return new Promise((resolve, reject) => {
+    let data = {};
+
+    if (credentials) {
+      if (credentials.email) {
+        data.email = credentials.email;
+      }
+
+      if (credentials.phone) {
+        data.phone = credentials.phone;
+      }
+    }
+
+    db.collection('users')
+      .updateOne(
+        {
+          _id: userId
+        },
+        {
+          $set: data
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(true);
         });

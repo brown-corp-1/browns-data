@@ -38,14 +38,14 @@ const fields = {
   lstImages: 1,
   description: 1,
   driverSaving: 1,
-  business: {
-    _id: '$business._id',
-    name: '$business.name'
-  },
+  businessId: 1,
   groupId: 1,
   driver: 1,
   target: 1,
   from: 1,
+  schema: 1,
+  totalFee: 1,
+  driverPercentage: 1,
   active: 1
 };
 
@@ -534,5 +534,5 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
 }
 
 function _normalizedDescription(transaction) {
-  return `${util.removeAccents(transaction.description || '')}|${transaction.distance}|${transaction.value}`;
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}`;
 }
