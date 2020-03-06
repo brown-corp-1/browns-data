@@ -283,12 +283,14 @@ function findUsers(userId) {
       .aggregate([
         {
           $match: {
-            userId
+            userId,
+            active: true
           }
         },
         {
           $project: {
-            groupId: '$groupId'
+            groupId: 1,
+            managedIds: 1
           }
         }
       ])
@@ -306,6 +308,7 @@ function findUsers(userId) {
             },
             {
               $project: {
+                groupId: 1,
                 userId: 1,
                 removedFromManager: 1,
                 businessIds: 1,
@@ -344,6 +347,10 @@ function findUsers(userId) {
                   return reject(err);
                 }
 
+                const managedGroups = groupsResults
+                  .filter(r => r.managedIds && r.managedIds.length)
+                  .map(r => r.groupId.toString());
+
                 users.forEach((user) => {
                   const isNotTheSameUser = user._id.toString() !== userId.toString();
 
@@ -353,7 +360,9 @@ function findUsers(userId) {
 
                   businessGroups.forEach((businessGroup) => {
                     if (businessGroup.userId.toString() === user._id.toString()) {
-                      user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
+                      if (managedGroups.indexOf(businessGroup.groupId.toString()) >= 0) {
+                        user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
+                      }
 
                       if (businessGroup.businessIds && businessGroup.businessIds.length) {
                         user.businesses = user.businesses.concat(businessGroup.businessIds);
