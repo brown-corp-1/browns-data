@@ -459,12 +459,12 @@ function setSpotlight(userId, spotlightKey) {
   });
 }
 
-function resetPassword(email) {
+function resetPassword(userId) {
   return new Promise((resolve, reject) => {
     db.collection('users')
       .updateOne(
         {
-          email: email
+          _id: userId
         },
         {
           $set: {
