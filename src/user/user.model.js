@@ -275,6 +275,7 @@ function getInvite(userId) {
           firstName: 1,
           lastName: 1,
           email: 1,
+          phone: 1,
           password: 1,
           spotlights: 1,
           facebookId: 1,
@@ -513,7 +514,8 @@ function existResetToken(resetToken) {
           'resetPassword.token': resetToken
         })
       .project({
-        email: 1
+        email: 1,
+        phone: 1
       })
       .limit(1)
       .toArray((err, result) => {
@@ -573,20 +575,26 @@ function updateLoginInfo(userId, notificationToken) {
 
 function unassignNotificationToken(notificationToken) {
   return new Promise((resolve, reject) => {
-    db.collection('users')
-      .updateMany(
-        {
-          notificationToken
-        },
-        {
-          $set: {
-            notificationToken: ''
-          }
-        },
-        (err, result) => {
-          if (err) { return reject(err); }
+    if (notificationToken) {
+      db.collection('users')
+        .updateMany(
+          {
+            notificationToken
+          },
+          {
+            $set: {
+              notificationToken: ''
+            }
+          },
+          (err, result) => {
+            if (err) {
+              return reject(err);
+            }
 
-          return resolve(result);
-        });
+            return resolve(result);
+          });
+    }
+
+    resolve();
   });
 }
