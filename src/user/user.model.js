@@ -514,7 +514,8 @@ function existResetToken(resetToken) {
           'resetPassword.token': resetToken
         })
       .project({
-        email: 1
+        email: 1,
+        phone: 1
       })
       .limit(1)
       .toArray((err, result) => {
