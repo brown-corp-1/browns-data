@@ -275,6 +275,7 @@ function getInvite(userId) {
           firstName: 1,
           lastName: 1,
           email: 1,
+          phone: 1,
           password: 1,
           spotlights: 1,
           facebookId: 1,
