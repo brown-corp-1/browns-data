@@ -574,20 +574,26 @@ function updateLoginInfo(userId, notificationToken) {
 
 function unassignNotificationToken(notificationToken) {
   return new Promise((resolve, reject) => {
-    db.collection('users')
-      .updateMany(
-        {
-          notificationToken
-        },
-        {
-          $set: {
-            notificationToken: ''
-          }
-        },
-        (err, result) => {
-          if (err) { return reject(err); }
+    if (notificationToken) {
+      db.collection('users')
+        .updateMany(
+          {
+            notificationToken
+          },
+          {
+            $set: {
+              notificationToken: ''
+            }
+          },
+          (err, result) => {
+            if (err) {
+              return reject(err);
+            }
 
-          return resolve(result);
-        });
+            return resolve(result);
+          });
+    }
+
+    resolve();
   });
 }
