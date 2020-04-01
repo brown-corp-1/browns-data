@@ -120,9 +120,9 @@ function hasBusinessAnyMode(userId, businessIds) {
 
         const resultSize = _.intersectionWith(_.flatten(
           _.concat(
-            _.map(result, 'managedIds'),
-            _.map(result, 'businessIds')
-          )), businessIds, _.isEqual).length;
+            _.map(result, (r) => r.managedIds.toString()),
+            _.map(result, (r) => r.businessIds.toString())
+          )), _.map(businessIds, (b) => b.toString())).length;
 
         return resolve(resultSize === businessIds.length);
       });

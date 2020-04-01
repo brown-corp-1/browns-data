@@ -29,18 +29,15 @@ function add(business) {
   });
 }
 
-function update(businessId, type, name, owners, photo) {
+function update(businessId, type, name, owners, drivers) {
   return new Promise((resolve, reject) => {
     let newBusiness = {
       type,
       name,
       owners,
+      drivers,
       lastUpdate: new Date()
     };
-
-    if (photo) {
-      newBusiness.photo = photo;
-    }
 
     db.collection('businesses')
       .updateOne(
@@ -220,6 +217,7 @@ function getBusinessesWithOwners(businessIds) {
           $project: {
             name: 1,
             owners: 1,
+            drivers: 1,
             photo: 1,
             active: 1,
             type: 1,
