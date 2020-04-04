@@ -111,7 +111,7 @@ function hasBusinessAnyMode(userId, businessIds) {
           projection: {
             _id: 0,
             managedIds: 1,
-            businessId: 1
+            businessIds: 1
           }
         }
       )
