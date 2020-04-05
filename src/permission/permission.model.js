@@ -108,9 +108,11 @@ function hasBusinessAnyMode(userId, businessIds) {
           ]
         },
         {
-          _id: 0,
-          managedIds: 1,
-          businessId: 1
+          projection: {
+            _id: 0,
+            managedIds: 1,
+            businessIds: 1
+          }
         }
       )
       .toArray((err, result) => {
@@ -118,11 +120,20 @@ function hasBusinessAnyMode(userId, businessIds) {
           return reject(err);
         }
 
-        const resultSize = _.intersectionWith(_.flatten(
-          _.concat(
-            _.map(result, 'managedIds'),
-            _.map(result, 'businessIds')
-          )), businessIds, _.isEqual).length;
+        const resultSize = _.intersectionWith(
+          _.map(
+            _.compact(
+              _.flatten(
+                _.concat(
+                  _.map(result, (r) => r.managedIds),
+                  _.map(result, (r) => r.businessIds)
+                )
+              )
+            ),
+            (r) => r.toString()
+          ),
+          _.map(businessIds, (b) => b.toString())
+        ).length;
 
         return resolve(resultSize === businessIds.length);
       });
