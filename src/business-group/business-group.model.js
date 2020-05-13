@@ -109,7 +109,8 @@ function getAllBusinesses(userId) {
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
       .find({
-        userId
+        userId,
+        active: true
       })
       .toArray((err, result) => {
         if (err) {
@@ -362,6 +363,7 @@ function findUsers(userId) {
                   businessGroups.forEach((businessGroup) => {
                     if (businessGroup.userId.toString() === user._id.toString()) {
                       if (managedGroups.indexOf(businessGroup.groupId.toString()) >= 0) {
+                        user.invitedByMe = true;
                         user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
                       }
 

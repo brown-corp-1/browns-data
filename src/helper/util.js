@@ -7,6 +7,7 @@ module.exports = {
   consolidateMontlyBalances,
   generateImages,
   getUserBalance,
+  getUserBalancePerBusiness,
   getGroupBalance,
   putImage,
   removeAccents,
@@ -144,6 +145,32 @@ function getUserBalance(balances, userId, businessId) {
   }
 
   return formatBalances(userBalances);
+}
+
+function getUserBalancePerBusiness(balances, userId) {
+  let userBalances;
+  let userBalancesPerBusiness = {};
+  let formattedBalances = [];
+
+  userBalances = balances.filter((balance) => {
+    return balance.userId.toString() === userId.toString();
+  });
+
+  userBalances.forEach((balance) => {
+    const businessId = balance.businessId.toString();
+
+    userBalancesPerBusiness[businessId] = userBalancesPerBusiness[businessId] || [];
+    userBalancesPerBusiness[businessId].push(balance);
+  });
+
+  Object.keys(userBalancesPerBusiness).forEach((balance) => {
+    const currentBalance = formatBalances(userBalancesPerBusiness[balance]);
+
+    currentBalance.businessId = balance;
+    formattedBalances.push(currentBalance);
+  });
+
+  return formattedBalances;
 }
 
 function getGroupBalance(balances, groupId) {

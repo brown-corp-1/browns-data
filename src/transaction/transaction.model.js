@@ -1,4 +1,8 @@
 module.exports = {
+  v2: {
+    getUserBalancePerMonth: getUserBalancePerMonthV2,
+    getUserBalancePerDay: getUserBalancePerDayV2,
+  },
   add,
   addMany,
   get,
@@ -6,6 +10,9 @@ module.exports = {
   getRecord,
   getByData,
   getBalance,
+  getBalanceMine,
+  getBalanceHaveToOthers,
+  getBalanceOthersHave,
   getUserBalancePerMonth,
   getUserBalancePerDay,
   getTree,
@@ -37,6 +44,7 @@ const fields = {
   parentId: 1,
   lstImages: 1,
   description: 1,
+  normalizedDescription: 1,
   driverSaving: 1,
   businessId: 1,
   groupId: 1,
@@ -46,6 +54,9 @@ const fields = {
   schema: 1,
   totalFee: 1,
   driverPercentage: 1,
+  balanceMine: 1,
+  balanceHaveToOthers: 1,
+  balanceOthersHave: 1,
   active: 1
 };
 
@@ -395,6 +406,196 @@ function getBalance(businessId, userId, admin, transactionTypes, startDate, endD
   });
 }
 
+function getBalanceMine(businessId, userId, transactionTypes, startDate, endDate, description) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $sort: {date: -1}
+        },
+        {
+          $match: {
+            userId,
+            owner: userId
+          }
+        },
+        {
+          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
+        },
+        {
+          $addFields: {
+            isMine: {$eq: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match:
+            {
+              isMine: true
+            }
+        },
+        {
+          $group: {
+            _id: {
+              businessId: '$businessId',
+              type: '$type',
+              owner: '$owner'
+            },
+            lastUpdate: {$first: '$date'},
+            driverSaving: {
+              $sum: '$driverSaving'
+            },
+            total: {
+              $sum: '$value'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.owner',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            savings: '$driverSaving',
+            total: '$total'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(util.arrayBalanceToObject(result));
+      });
+  });
+}
+
+function getBalanceHaveToOthers(businessId, userId, transactionTypes, startDate, endDate, description) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $sort: {date: -1}
+        },
+        {
+          $match: {
+            userId
+          }
+        },
+        {
+          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
+        },
+        {
+          $addFields: {
+            isHaveToOthers: {$ne: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match:
+            {
+              isHaveToOthers: true
+            }
+        },
+        {
+          $group: {
+            _id: {
+              businessId: '$businessId',
+              type: '$type',
+              owner: '$owner'
+            },
+            lastUpdate: {$first: '$date'},
+            driverSaving: {
+              $sum: '$driverSaving'
+            },
+            total: {
+              $sum: '$value'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.owner',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            savings: '$driverSaving',
+            total: '$total'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(util.arrayBalanceToObject(result));
+      });
+  });
+}
+
+function getBalanceOthersHave(businessId, userId, transactionTypes, startDate, endDate, description) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $sort: {date: -1}
+        },
+        {
+          $match: {
+            owner: userId
+          }
+        },
+        {
+          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
+        },
+        {
+          $addFields: {
+            isOthersHave: {$ne: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match:
+            {
+              isOthersHave: true
+            }
+        },
+        {
+          $group: {
+            _id: {
+              businessId: '$businessId',
+              type: '$type',
+              owner: '$owner'
+            },
+            lastUpdate: {$first: '$date'},
+            driverSaving: {
+              $sum: '$driverSaving'
+            },
+            total: {
+              $sum: '$value'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.owner',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            savings: '$driverSaving',
+            total: '$total'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(util.arrayBalanceToObject(result));
+      });
+  });
+}
+
 function getUserBalancePerMonth(businessId, userId, admin) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
@@ -443,6 +644,140 @@ function getUserBalancePerMonth(businessId, userId, admin) {
         }
 
         return resolve(util.consolidateMontlyBalances(result));
+      });
+  });
+}
+
+function getUserBalancePerMonthV2(businessId, userId) {
+  return new Promise((resolve, reject) => {
+    const groupBy = {
+      $group: {
+        _id: {
+          type: '$type',
+          month: {
+            $month: '$date'
+          },
+          year: {
+            $year: '$date'
+          }
+        },
+        driverSaving: {
+          $sum: '$driverSaving'
+        },
+        total: {
+          $sum: '$value'
+        }
+      }
+    };
+    const project = {
+      $project: {
+        _id: 0,
+        type: '$_id.type',
+        month: '$_id.month',
+        year: '$_id.year',
+        savings: '$driverSaving',
+        total: '$total'
+      }
+    };
+    const match = {
+      businessId,
+      admin: false,
+      active: true
+    };
+    let balances = {
+      mine: [],
+      haveToOthers: [],
+      othersHave: []
+    };
+
+    // Mine
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: Object.assign({}, match, {
+            userId,
+            owner: userId
+          })
+        },
+        {
+          $addFields: {
+            isMine: {$eq: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match: {
+            isMine: true
+          }
+        },
+        groupBy,
+        project
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        balances.mine = util.consolidateMontlyBalances(result);
+
+        // Have To Others
+        db.collection('transactions')
+          .aggregate([
+            {
+              $match: Object.assign({}, match, {
+                userId
+              })
+            },
+            {
+              $addFields: {
+                isHaveToThers: {$ne: ['$userId', '$owner']}
+              }
+            },
+            {
+              $match: {
+                isHaveToThers: true
+              }
+            },
+            groupBy,
+            project
+          ])
+          .toArray((err, result) => {
+            if (err) {
+              return reject(err);
+            }
+
+            balances.haveToOthers = util.consolidateMontlyBalances(result);
+
+            // Others have
+            db.collection('transactions')
+              .aggregate([
+                {
+                  $match: Object.assign({}, match, {
+                    owner: userId
+                  })
+                },
+                {
+                  $addFields: {
+                    isOthersHave: {$ne: ['$userId', '$owner']}
+                  }
+                },
+                {
+                  $match: {
+                    isOthersHave: true
+                  }
+                },
+                groupBy,
+                project
+              ])
+              .toArray((err, result) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                balances.othersHave = util.consolidateMontlyBalances(result);
+
+                return resolve(balances);
+              });
+          });
       });
   });
 }
@@ -503,12 +838,180 @@ function getUserBalancePerDay(businessId, userId, admin) {
   });
 }
 
+function getUserBalancePerDayV2(businessId, userId) {
+  return new Promise((resolve, reject) => {
+    const groupBy = {
+      $group: {
+        _id: {
+          type: '$type',
+          month: {
+            $month: '$date'
+          },
+          year: {
+            $year: '$date'
+          },
+          day: {
+            $dayOfMonth: '$date'
+          }
+        },
+        driverSaving: {
+          $sum: '$driverSaving'
+        },
+        total: {
+          $sum: '$value'
+        }
+      }
+    };
+    const project = {
+      $project: {
+        _id: 0,
+        type: '$_id.type',
+        day: '$_id.day',
+        month: '$_id.month',
+        year: '$_id.year',
+        savings: '$driverSaving',
+        total: '$total'
+      }
+    };
+    const match = {
+      businessId,
+      admin: false,
+      active: true
+    };
+    let balances = {
+      mine: [],
+      haveToOthers: [],
+      othersHave: []
+    };
+
+    // Mine
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: Object.assign({}, match, {
+            userId,
+            owner: userId
+          })
+        },
+        {
+          $addFields: {
+            isMine: {$eq: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match: {
+            isMine: true
+          }
+        },
+        groupBy,
+        project
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        balances.mine = util.consolidateDailyBalances(result);
+
+        // Have to others
+        db.collection('transactions')
+          .aggregate([
+            {
+              $match: Object.assign({}, match, {
+                userId
+              })
+            },
+            {
+              $addFields: {
+                isHaveToThers: {$ne: ['$userId', '$owner']}
+              }
+            },
+            {
+              $match: {
+                isHaveToThers: true
+              }
+            },
+            groupBy,
+            project
+          ])
+          .toArray((err, result) => {
+            if (err) {
+              return reject(err);
+            }
+
+            balances.haveToOthers = util.consolidateDailyBalances(result);
+
+            // Others have
+            db.collection('transactions')
+              .aggregate([
+                {
+                  $match: Object.assign({}, match, {
+                    owner: userId
+                  })
+                },
+                {
+                  $addFields: {
+                    isOthersHave: {$ne: ['$userId', '$owner']}
+                  }
+                },
+                {
+                  $match: {
+                    isOthersHave: true
+                  }
+                },
+                groupBy,
+                project
+              ])
+              .toArray((err, result) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                balances.othersHave = util.consolidateDailyBalances(result);
+
+                return resolve(balances);
+              });
+          });
+      });
+  });
+}
+
 function _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
   let match = {
     businessId,
     owner: userId,
     admin,
     active: true
+  };
+
+  if (transactionTypes && transactionTypes.length) {
+    match.type = {$in: transactionTypes};
+  }
+
+  if (startDate) {
+    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
+  }
+
+  if (endDate) {
+    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
+    match.date = match.date || {};
+    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
+  }
+
+  if (description) {
+    match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
+  }
+
+  return match;
+}
+
+function _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description) {
+  let match = {
+    businessId,
+    admin: false,
+    active: true,
+    activeGroup: true
   };
 
   if (transactionTypes && transactionTypes.length) {
