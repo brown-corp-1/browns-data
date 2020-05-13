@@ -17,6 +17,8 @@ const sys = require('sys');
 const exec = require('child_process').exec;
 
 function init() {
+  createIndexes();
+
   setInterval(() => {
     if (new Date().getHours() === 6) {
       makeBackupNew();
@@ -26,6 +28,34 @@ function init() {
   setInterval(() => {
     cleanResetPasswordToken();
   }, 60000); // each 10 minutes remove reset password token
+}
+
+function createIndexes() {
+  try {
+    logger.info('creating indexes');
+    db.collection('businessGroups').createIndex({userId: 1});
+    db.collection('businessGroups').createIndex({groupId: 1});
+    db.collection('businessGroups').createIndex({managedIds: 1});
+    db.collection('businessGroups').createIndex({businessIds: 1});
+    db.collection('businessGroups').createIndex({active: 1});
+    db.collection('businessGroups').createIndex({drivenIds: 1});
+    db.collection('balances').createIndex({userId: 1});
+    db.collection('balances').createIndex({owner: 1});
+    db.collection('balances').createIndex({businessId: 1});
+    db.collection('balances').createIndex({type: 1});
+    db.collection('transactions').createIndex({normalizedDescription: 1});
+    db.collection('transactions').createIndex({owner: 1});
+    db.collection('transactions').createIndex({userId: 1});
+    db.collection('transactions').createIndex({businessId: 1});
+    db.collection('transactions').createIndex({type: 1});
+    db.collection('users').createIndex({email: 1});
+    db.collection('users').createIndex({phone: 1});
+    db.collection('tokens').createIndex({token: 1});
+    db.collection('tokens').createIndex({userId: 1});
+    db.collection('emails').createIndex({sent: 1});
+  } catch (e) {
+    logger.info('error creating indexes', e);
+  }
 }
 
 function makeBackupNew(skipEmail, callback) {
