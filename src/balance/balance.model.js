@@ -880,15 +880,25 @@ function getTypeFilter(businessId, userId, admin) {
   });
 }
 
-function getTypeFilterV2(businessId, userId) {
+function getTypeFilterV2(business, userId) {
   return new Promise((resolve, reject) => {
-    db.collection('balances')
+    const businessId = business._id;
+    let match = {
+      businessId
+    };
+
+    if (business.isAdmin) {
+      match.userId = userId;
+      match.admin = true;
+    } else {
+      match.owner = userId;
+      match.admin = false;
+    }
+
+    db.collection('transactions')
       .aggregate([
         {
-          $match: {
-            businessId,
-            owner: userId
-          }
+          $match: match
         },
         {
           $group: {
