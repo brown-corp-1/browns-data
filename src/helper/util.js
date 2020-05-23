@@ -91,27 +91,65 @@ function consolidateDailyBalances(balanceArray) {
 }
 
 function arrayBalanceToObject(balanceArray) {
-  const deposits = balanceArray.find((balance) => balance.type === typeOfTransaction.QUOTA) || {};
-  const expenses = balanceArray.find((balance) => balance.type === typeOfTransaction.EXPENSE) || {};
-  const cashOut = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_OUT) || {};
-  const cashIn = balanceArray.find((balance) => balance.type === typeOfTransaction.CASH_IN) || {};
-  const peekAndPlate = balanceArray.find((balance) => balance.type === typeOfTransaction.PEAK_AND_PLATE) || {};
-  const stranded = balanceArray.find((balance) => balance.type === typeOfTransaction.STRANDED) || {};
+  const deposits = {total: 0, savings: 0, lastUpdate: 0};
+  const expenses = {total: 0, lastUpdate: 0};
+  const cashOut = {total: 0, lastUpdate: 0};
+  const cashIn = {total: 0, lastUpdate: 0};
+  const peekAndPlate = {total: 0, lastUpdate: 0};
+  const stranded = {total: 0, lastUpdate: 0};
+
+  if (balanceArray && balanceArray.length) {
+    balanceArray.forEach((item) => {
+      switch (item.type) {
+        case  typeOfTransaction.QUOTA: {
+          deposits.total += item.total || 0;
+          deposits.savings += item.savings || 0;
+          deposits.lastUpdate = Math.max(item.lastUpdate || 0, deposits.lastUpdate);
+          break;
+        }
+        case  typeOfTransaction.EXPENSE: {
+          expenses.total += item.total || 0;
+          expenses.lastUpdate = Math.max(item.lastUpdate || 0, expenses.lastUpdate);
+          break;
+        }
+        case  typeOfTransaction.CASH_OUT: {
+          cashOut.total += item.total || 0;
+          cashOut.lastUpdate = Math.max(item.lastUpdate || 0, cashOut.lastUpdate);
+          break;
+        }
+        case  typeOfTransaction.CASH_IN: {
+          cashIn.total += item.total || 0;
+          cashIn.lastUpdate = Math.max(item.lastUpdate || 0, cashIn.lastUpdate);
+          break;
+        }
+        case  typeOfTransaction.PEAK_AND_PLATE: {
+          peekAndPlate.total += item.total || 0;
+          peekAndPlate.lastUpdate = Math.max(item.lastUpdate || 0, peekAndPlate.lastUpdate);
+          break;
+        }
+        case  typeOfTransaction.STRANDED: {
+          stranded.total += item.total || 0;
+          stranded.lastUpdate = Math.max(item.lastUpdate || 0, stranded.lastUpdate);
+          break;
+        }
+      }
+    });
+  }
 
   let balance = {
-    deposits: deposits && deposits.total ? deposits.total : 0,
-    expenses: expenses && expenses.total ? expenses.total : 0,
-    cashOut: cashOut && cashOut.total ? cashOut.total : 0,
-    cashIn: cashIn && cashIn.total ? cashIn.total : 0,
-    savings: deposits && deposits.savings ? deposits.savings : 0,
+    deposits: deposits.total,
+    expenses: expenses.total,
+    cashOut: cashOut.total,
+    cashIn: cashIn.total,
+    savings: deposits.savings,
     lastUpdate: new Date(
       Math.max(
-        deposits.lastUpdate || 0,
-        expenses.lastUpdate || 0,
-        cashOut.lastUpdate || 0,
-        cashIn.lastUpdate || 0,
-        peekAndPlate.lastUpdate || 0,
-        stranded.lastUpdate || 0))
+        deposits.lastUpdate,
+        expenses.lastUpdate,
+        cashOut.lastUpdate,
+        cashIn.lastUpdate,
+        peekAndPlate.lastUpdate,
+        stranded.lastUpdate))
   };
 
   balance.total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;

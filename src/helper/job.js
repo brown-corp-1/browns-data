@@ -48,6 +48,12 @@ function createIndexes() {
     db.collection('transactions').createIndex({userId: 1});
     db.collection('transactions').createIndex({businessId: 1});
     db.collection('transactions').createIndex({type: 1});
+    db.collection('transactions').createIndex({date: -1});
+    db.collection('transactions').createIndex({driver: 1});
+    db.collection('transactions').createIndex({admin: 1});
+    db.collection('transactions').createIndex({active: 1});
+    db.collection('transactions').createIndex({userId: 1, owner: 1});
+    db.collection('transactions').createIndex({userId: 1, businessId: 1, admin: 1, active: 1, activeGroup: 1});
     db.collection('users').createIndex({email: 1});
     db.collection('users').createIndex({phone: 1});
     db.collection('tokens').createIndex({token: 1});
