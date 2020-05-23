@@ -21,6 +21,8 @@ module.exports = {
   removeChildren
 };
 
+const _ = require('lodash');
+const {typeOfTransaction} = require('./transaction.constant');
 const Promise = require('promise');
 const util = require('../helper/util');
 
@@ -30,7 +32,6 @@ const businessLookup = {
   foreignField: '_id',
   as: 'business'
 };
-
 const fields = {
   _id: 1,
   owner: 1,
@@ -58,6 +59,55 @@ const fields = {
   balanceHaveToOthers: 1,
   balanceOthersHave: 1,
   active: 1
+};
+const balanceSort = {
+  $sort: {date: -1}
+};
+const balanceProject = {
+  $project: {
+    _id: 0,
+    userId: '$_id.owner',
+    type: '$_id.type',
+    lastUpdate: '$lastUpdate',
+    savings: '$driverSaving',
+    total: '$total'
+  }
+};
+const groupByOwnerBalance = {
+  $group: {
+    _id: {
+      businessId: '$businessId',
+      type: '$type',
+      owner: '$owner'
+    },
+    lastUpdate: {$first: '$date'},
+    driverSaving: {
+      $sum: '$driverSaving'
+    },
+    total: {
+      $sum: '$value'
+    }
+  }
+};
+const isHaveToOthersMatch = {
+  $match: {
+    isHaveToOthers: true
+  }
+};
+const isMineMatch = {
+  $match: {
+    isMine: true
+  }
+};
+const isHaveToOthersField = {
+  $addFields: {
+    isHaveToOthers: {$ne: ['$userId', '$owner']}
+  }
+};
+const isMineField = {
+  $addFields: {
+    isMine: {$eq: ['$userId', '$owner']}
+  }
 };
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
@@ -408,61 +458,109 @@ function getBalance(businessId, userId, admin, transactionTypes, startDate, endD
 
 function getBalanceMine(businessId, userId, transactionTypes, startDate, endDate, description) {
   return new Promise((resolve, reject) => {
-    db.collection('transactions')
-      .aggregate([
-        {
-          $sort: {date: -1}
-        },
-        {
-          $match: {
-            userId,
-            owner: userId
-          }
-        },
-        {
-          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
-        },
-        {
-          $addFields: {
-            isMine: {$eq: ['$userId', '$owner']}
-          }
-        },
-        {
-          $match:
-            {
-              isMine: true
-            }
-        },
-        {
-          $group: {
-            _id: {
-              businessId: '$businessId',
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
+    let balanceMatch = _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description);
+    let groupByBalance = _.clone(groupByOwnerBalance);
+
+    balanceMatch.$match.owner = userId;
+
+    if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+      let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
+      if (!otherTypes || !otherTypes.length) {
+        otherTypes = [-1];
+      }
+
+      balanceMatch = _getBalancesFiltersV2(userId, businessId, otherTypes, startDate, endDate, description);
+    } else if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+      groupByBalance = {
+        $group: {
+          _id: {
+            businessId: '$businessId',
+            type: '$type',
+            owner: '$owner'
+          },
+          lastUpdate: {$first: '$date'},
+          total: {
+            $sum: '$value'
           }
         }
+      }
+    }
+
+    db.collection('transactions')
+      .aggregate([
+        balanceMatch,
+        isMineField,
+        isMineMatch,
+        balanceSort,
+        groupByBalance,
+        balanceProject
       ])
       .toArray((err, result) => {
         if (err) {
           return reject(err);
+        }
+
+        if (transactionTypes && transactionTypes.length) {
+          // if the query contains quota but not cash in
+          if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+            delete balanceMatch.$match.owner;
+            balanceMatch.$match.admin = true;
+            balanceMatch.$match.type = typeOfTransaction.QUOTA;
+
+            return db.collection('transactions')
+              .aggregate([
+                balanceMatch,
+                {
+                  $addFields: {
+                    isMine: {$eq: ['$userId', '$driver']}
+                  }
+                },
+                isMineMatch,
+                balanceSort,
+                {
+                  $group: {
+                    _id: {
+                      businessId: '$businessId',
+                      type: '$type',
+                      owner: '$owner'
+                    },
+                    lastUpdate: {$first: '$date'},
+                    driverSaving: {
+                      $sum: '$driverSaving'
+                    }
+                  }
+                },
+                balanceProject
+              ])
+              .toArray((err, resultDriverSaving) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+              });
+          } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+            balanceMatch = _getBalancesFiltersV2(userId, businessId, [typeOfTransaction.CASH_IN], startDate, endDate, description);
+            balanceMatch.$match.owner = userId;
+            balanceMatch.$match.driver = {$exists: false};
+
+            return db.collection('transactions')
+              .aggregate([
+                balanceMatch,
+                isMineField,
+                isMineMatch,
+                balanceSort,
+                groupByOwnerBalance,
+                balanceProject
+              ])
+              .toArray((err, resultDriverSaving) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+              });
+          }
         }
 
         return resolve(util.arrayBalanceToObject(result));
@@ -472,60 +570,90 @@ function getBalanceMine(businessId, userId, transactionTypes, startDate, endDate
 
 function getBalanceHaveToOthers(businessId, userId, transactionTypes, startDate, endDate, description) {
   return new Promise((resolve, reject) => {
+    let balanceMatch = _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description);
+
+    if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+      let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
+      if (!otherTypes || !otherTypes.length) {
+        otherTypes = [-1];
+      }
+
+      balanceMatch = _getBalancesFiltersV2(userId, businessId, otherTypes, startDate, endDate, description);
+    }
+
     db.collection('transactions')
       .aggregate([
-        {
-          $sort: {date: -1}
-        },
-        {
-          $match: {
-            userId
-          }
-        },
-        {
-          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
-        },
-        {
-          $addFields: {
-            isHaveToOthers: {$ne: ['$userId', '$owner']}
-          }
-        },
-        {
-          $match:
-            {
-              isHaveToOthers: true
-            }
-        },
-        {
-          $group: {
-            _id: {
-              businessId: '$businessId',
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
-          }
-        }
+        balanceMatch,
+        isHaveToOthersField,
+        isHaveToOthersMatch,
+        balanceSort,
+        groupByOwnerBalance,
+        balanceProject
       ])
       .toArray((err, result) => {
         if (err) {
           return reject(err);
+        }
+
+        if (transactionTypes && transactionTypes.length) {
+          // if the query contains quota but not cash in
+          if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+            balanceMatch.$match.admin = true;
+            balanceMatch.$match.type = typeOfTransaction.QUOTA;
+
+            return db.collection('transactions')
+              .aggregate([
+                balanceMatch,
+                {
+                  $addFields: {
+                    isHaveToOthers: {$ne: ['$userId', '$driver']}
+                  }
+                },
+                isHaveToOthersMatch,
+                balanceSort,
+                {
+                  $group: {
+                    _id: {
+                      businessId: '$businessId',
+                      type: '$type',
+                      owner: '$driver'
+                    },
+                    lastUpdate: {$first: '$date'},
+                    driverSaving: {
+                      $sum: '$driverSaving'
+                    }
+                  }
+                },
+                balanceProject
+              ])
+              .toArray((err, resultDriverSaving) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+              });
+          } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+            balanceMatch = _getBalancesFiltersV2(userId, businessId, [typeOfTransaction.CASH_IN], startDate, endDate, description);
+            balanceMatch.$match.driver = {$exists: false};
+
+            return db.collection('transactions')
+              .aggregate([
+                balanceMatch,
+                isHaveToOthersField,
+                isHaveToOthersMatch,
+                balanceSort,
+                groupByOwnerBalance,
+                balanceProject
+              ])
+              .toArray((err, resultDriverSaving) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+              });
+          }
         }
 
         return resolve(util.arrayBalanceToObject(result));
@@ -537,9 +665,6 @@ function getBalanceOthersHave(businessId, userId, transactionTypes, startDate, e
   return new Promise((resolve, reject) => {
     db.collection('transactions')
       .aggregate([
-        {
-          $sort: {date: -1}
-        },
         {
           $match: {
             owner: userId
@@ -554,37 +679,13 @@ function getBalanceOthersHave(businessId, userId, transactionTypes, startDate, e
           }
         },
         {
-          $match:
-            {
-              isOthersHave: true
-            }
-        },
-        {
-          $group: {
-            _id: {
-              businessId: '$businessId',
-              type: '$type',
-              owner: '$owner'
-            },
-            lastUpdate: {$first: '$date'},
-            driverSaving: {
-              $sum: '$driverSaving'
-            },
-            total: {
-              $sum: '$value'
-            }
+          $match: {
+            isOthersHave: true
           }
         },
-        {
-          $project: {
-            _id: 0,
-            userId: '$_id.owner',
-            type: '$_id.type',
-            lastUpdate: '$lastUpdate',
-            savings: '$driverSaving',
-            total: '$total'
-          }
-        }
+        balanceSort,
+        groupByOwnerBalance,
+        balanceProject
       ])
       .toArray((err, result) => {
         if (err) {
@@ -923,12 +1024,12 @@ function getUserBalancePerDayV2(businessId, userId) {
             },
             {
               $addFields: {
-                isHaveToThers: {$ne: ['$userId', '$owner']}
+                isHaveToOthers: {$ne: ['$userId', '$owner']}
               }
             },
             {
               $match: {
-                isHaveToThers: true
+                isHaveToOthers: true
               }
             },
             groupBy,
@@ -1034,6 +1135,39 @@ function _getBalancesFilters(businessId, transactionTypes, startDate, endDate, d
   }
 
   return match;
+}
+
+function _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description) {
+  let match = {
+    userId,
+    businessId,
+    admin: false,
+    active: true,
+    activeGroup: true
+  };
+
+  if (transactionTypes && transactionTypes.length) {
+    match.type = {$in: transactionTypes};
+  }
+
+  if (startDate) {
+    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
+  }
+
+  if (endDate) {
+    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
+    match.date = match.date || {};
+    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
+  }
+
+  if (description) {
+    match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
+  }
+
+  return {
+    $match: match
+  };
 }
 
 function _normalizedDescription(transaction) {
