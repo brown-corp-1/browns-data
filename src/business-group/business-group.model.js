@@ -17,10 +17,12 @@ module.exports = {
   getManagers,
   removeBusiness,
   removeUserFromGroup,
+  removeUserFromAllGroups,
   setAsDriver,
   setAsRelatedUser,
   removeAsDriver,
-  removeUserAsDriverInGroup
+  removeUserAsDriverInGroup,
+  removeUserAsDriverInAllGroups
 };
 
 const Promise = require('promise');
@@ -467,6 +469,34 @@ function removeUserFromGroup(userIds, groupId, fromManager) {
   });
 }
 
+function removeUserFromAllGroups(managerId, userId) {
+  return new Promise((resolve, reject) => {
+    db.collection('groups')
+      .find({
+        managerId
+      })
+      .toArray((err, groups) => {
+        groups = groups.map(g => g._id);
+
+        db.collection('businessGroups')
+          .updateMany({
+            groupId: {$in: groups},
+            userId
+          }, {
+            $set: {
+              removedFromManager: true
+            }
+          }, (err, result) => {
+            if (err) {
+              return reject(err);
+            }
+
+            return resolve(result);
+          });
+      });
+  });
+}
+
 function activeUser(userId, groupIds, activeByManager) {
   let updates = {
     $set: {active: true}
@@ -654,5 +684,36 @@ function removeUserAsDriverInGroup(userIds, groupId) {
           }
           return resolve(result);
         });
+  });
+}
+
+function removeUserAsDriverInAllGroups(managerId, userId) {
+  return new Promise((resolve, reject) => {
+    db.collection('groups')
+      .find({
+        managerId
+      })
+      .toArray((err, groups) => {
+        groups = groups.map(g => g._id);
+
+        db.collection('businessGroups')
+          .updateOne(
+            {
+              groupId: {$in: groups},
+              userId
+            },
+            {
+              $unset: {
+                currentBusinessId: 1,
+                drivenIds: 1
+              }
+            },
+            (err, result) => {
+              if (err) {
+                return reject(err);
+              }
+              return resolve(result);
+            });
+      });
   });
 }
