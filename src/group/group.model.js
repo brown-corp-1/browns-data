@@ -4,6 +4,7 @@ module.exports = {
   addUserToGroup,
   find,
   getDefaultGroupId,
+  getDefaultGroupIds,
   getDefaultBusinessGroupId,
   remove,
   update
@@ -143,6 +144,28 @@ function getDefaultGroupId(userId, businessId) {
         }
 
         return resolve(result && result.length ? result[0]._id : null);
+      });
+  });
+}
+
+function getDefaultGroupIds(userId) {
+  return new Promise((resolve, reject) => {
+    return db.collection('groups')
+      .find(
+        {
+          managerId: userId,
+          active: true
+        },
+        {
+          _id: '$group._id'
+        }
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
       });
   });
 }
