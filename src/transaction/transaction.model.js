@@ -10,9 +10,10 @@ module.exports = {
   getRecord,
   getByData,
   getBalance,
-  getBalanceMine,
-  getBalanceHaveToOthers,
-  getBalanceOthersHave,
+  getBalances,
+  // getBalanceMine,
+  // getBalanceHaveToOthers,
+  // getBalanceOthersHave,
   getUserBalancePerMonth,
   getUserBalancePerDay,
   getTree,
@@ -456,246 +457,296 @@ function getBalance(businessId, userId, admin, transactionTypes, startDate, endD
   });
 }
 
-function getBalanceMine(businessId, userId, transactionTypes, startDate, endDate, description) {
+function getBalances(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
   return new Promise((resolve, reject) => {
-    let balanceMatch = _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description);
-    let groupByBalance = _.clone(groupByOwnerBalance);
-
-    balanceMatch.$match.owner = userId;
-
-    if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
-      let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
-      if (!otherTypes || !otherTypes.length) {
-        otherTypes = [-1];
-      }
-
-      balanceMatch = _getBalancesFiltersV2(userId, businessId, otherTypes, startDate, endDate, description);
-    } else if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
-      groupByBalance = {
-        $group: {
-          _id: {
-            businessId: '$businessId',
-            type: '$type',
-            owner: '$owner'
-          },
-          lastUpdate: {$first: '$date'},
-          total: {
-            $sum: '$value'
-          }
-        }
-      }
-    }
+    let balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description);
 
     db.collection('transactions')
       .aggregate([
         balanceMatch,
-        isMineField,
-        isMineMatch,
         balanceSort,
-        groupByBalance,
-        balanceProject
+        {
+          $group: {
+            _id: {
+              businessId: '$businessId',
+              type: '$type',
+              owner: '$owner'
+            },
+            lastUpdate: {$first: '$date'},
+            balanceMine: {
+              $sum: '$balanceMine'
+            },
+            balanceHaveToOthers: {
+              $sum: '$balanceHaveToOthers'
+            },
+            balanceOthersHave: {
+              $sum: '$balanceOthersHave'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.owner',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            balanceMine: '$balanceMine',
+            balanceHaveToOthers: '$balanceHaveToOthers',
+            balanceOthersHave: '$balanceOthersHave'
+          }
+        }
       ])
       .toArray((err, result) => {
         if (err) {
           return reject(err);
         }
 
-        if (transactionTypes && transactionTypes.length) {
-          // if the query contains quota but not cash in
-          if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
-            delete balanceMatch.$match.owner;
-            balanceMatch.$match.admin = true;
-            balanceMatch.$match.type = typeOfTransaction.QUOTA;
-
-            return db.collection('transactions')
-              .aggregate([
-                balanceMatch,
-                {
-                  $addFields: {
-                    isMine: {$eq: ['$userId', '$driver']}
-                  }
-                },
-                isMineMatch,
-                balanceSort,
-                {
-                  $group: {
-                    _id: {
-                      businessId: '$businessId',
-                      type: '$type',
-                      owner: '$owner'
-                    },
-                    lastUpdate: {$first: '$date'},
-                    driverSaving: {
-                      $sum: '$driverSaving'
-                    }
-                  }
-                },
-                balanceProject
-              ])
-              .toArray((err, resultDriverSaving) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
-              });
-          } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
-            balanceMatch = _getBalancesFiltersV2(userId, businessId, [typeOfTransaction.CASH_IN], startDate, endDate, description);
-            balanceMatch.$match.owner = userId;
-            balanceMatch.$match.driver = {$exists: false};
-
-            return db.collection('transactions')
-              .aggregate([
-                balanceMatch,
-                isMineField,
-                isMineMatch,
-                balanceSort,
-                groupByOwnerBalance,
-                balanceProject
-              ])
-              .toArray((err, resultDriverSaving) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
-              });
-          }
-        }
-
-        return resolve(util.arrayBalanceToObject(result));
+        return resolve(util.transactionBalancesToObject(result));
       });
   });
 }
 
-function getBalanceHaveToOthers(businessId, userId, transactionTypes, startDate, endDate, description) {
-  return new Promise((resolve, reject) => {
-    let balanceMatch = _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description);
-
-    if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
-      let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
-      if (!otherTypes || !otherTypes.length) {
-        otherTypes = [-1];
-      }
-
-      balanceMatch = _getBalancesFiltersV2(userId, businessId, otherTypes, startDate, endDate, description);
-    }
-
-    db.collection('transactions')
-      .aggregate([
-        balanceMatch,
-        isHaveToOthersField,
-        isHaveToOthersMatch,
-        balanceSort,
-        groupByOwnerBalance,
-        balanceProject
-      ])
-      .toArray((err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        if (transactionTypes && transactionTypes.length) {
-          // if the query contains quota but not cash in
-          if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
-            balanceMatch.$match.admin = true;
-            balanceMatch.$match.type = typeOfTransaction.QUOTA;
-
-            return db.collection('transactions')
-              .aggregate([
-                balanceMatch,
-                {
-                  $addFields: {
-                    isHaveToOthers: {$ne: ['$userId', '$driver']}
-                  }
-                },
-                isHaveToOthersMatch,
-                balanceSort,
-                {
-                  $group: {
-                    _id: {
-                      businessId: '$businessId',
-                      type: '$type',
-                      owner: '$driver'
-                    },
-                    lastUpdate: {$first: '$date'},
-                    driverSaving: {
-                      $sum: '$driverSaving'
-                    }
-                  }
-                },
-                balanceProject
-              ])
-              .toArray((err, resultDriverSaving) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
-              });
-          } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
-            balanceMatch = _getBalancesFiltersV2(userId, businessId, [typeOfTransaction.CASH_IN], startDate, endDate, description);
-            balanceMatch.$match.driver = {$exists: false};
-
-            return db.collection('transactions')
-              .aggregate([
-                balanceMatch,
-                isHaveToOthersField,
-                isHaveToOthersMatch,
-                balanceSort,
-                groupByOwnerBalance,
-                balanceProject
-              ])
-              .toArray((err, resultDriverSaving) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
-              });
-          }
-        }
-
-        return resolve(util.arrayBalanceToObject(result));
-      });
-  });
-}
-
-function getBalanceOthersHave(businessId, userId, transactionTypes, startDate, endDate, description) {
-  return new Promise((resolve, reject) => {
-    db.collection('transactions')
-      .aggregate([
-        {
-          $match: {
-            owner: userId
-          }
-        },
-        {
-          $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
-        },
-        {
-          $addFields: {
-            isOthersHave: {$ne: ['$userId', '$owner']}
-          }
-        },
-        {
-          $match: {
-            isOthersHave: true
-          }
-        },
-        balanceSort,
-        groupByOwnerBalance,
-        balanceProject
-      ])
-      .toArray((err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(util.arrayBalanceToObject(result));
-      });
-  });
-}
+// function getBalanceMine(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
+//   return new Promise((resolve, reject) => {
+//     let balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description);
+//     // let balanceMatch = _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description);
+//     let groupByBalance = _.clone(groupByOwnerBalance);
+//
+//     balanceMatch.$match.owner = userId;
+//
+//     /* if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+//        let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
+//        if (!otherTypes || !otherTypes.length) {
+//          otherTypes = [-1];
+//        }
+//
+//        balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, otherTypes, startDate, endDate, description);
+//      } else if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+//        groupByBalance = {
+//          $group: {
+//            _id: {
+//              businessId: '$businessId',
+//              type: '$type',
+//              owner: '$owner'
+//            },
+//            lastUpdate: {$first: '$date'},
+//            total: {
+//              $sum: '$value'
+//            }
+//          }
+//        }
+//      }*/
+//
+//     db.collection('transactions')
+//       .aggregate([
+//         balanceMatch,
+//         isMineField,
+//         isMineMatch,
+//         balanceSort,
+//         groupByBalance,
+//         balanceProject
+//       ])
+//       .toArray((err, result) => {
+//         if (err) {
+//           return reject(err);
+//         }
+//         /*
+//                 if (transactionTypes && transactionTypes.length) {
+//                   // if the query contains quota but not cash in
+//                   if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+//                     delete balanceMatch.$match.owner;
+//                     balanceMatch.$match.admin = true;
+//                     balanceMatch.$match.type = typeOfTransaction.QUOTA;
+//
+//                     return db.collection('transactions')
+//                       .aggregate([
+//                         balanceMatch,
+//                         {
+//                           $addFields: {
+//                             isMine: {$eq: ['$userId', '$driver']}
+//                           }
+//                         },
+//                         isMineMatch,
+//                         balanceSort,
+//                         {
+//                           $group: {
+//                             _id: {
+//                               businessId: '$businessId',
+//                               type: '$type',
+//                               owner: '$owner'
+//                             },
+//                             lastUpdate: {$first: '$date'},
+//                             driverSaving: {
+//                               $sum: '$driverSaving'
+//                             }
+//                           }
+//                         },
+//                         balanceProject
+//                       ])
+//                       .toArray((err, resultDriverSaving) => {
+//                         if (err) {
+//                           return reject(err);
+//                         }
+//
+//                         return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+//                       });
+//                   } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+//                     balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, [typeOfTransaction.CASH_IN], startDate, endDate, description);
+//                     balanceMatch.$match.owner = userId;
+//                     balanceMatch.$match.driver = {$exists: false};
+//
+//                     return db.collection('transactions')
+//                       .aggregate([
+//                         balanceMatch,
+//                         isMineField,
+//                         isMineMatch,
+//                         balanceSort,
+//                         groupByOwnerBalance,
+//                         balanceProject
+//                       ])
+//                       .toArray((err, resultDriverSaving) => {
+//                         if (err) {
+//                           return reject(err);
+//                         }
+//
+//                         return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+//                       });
+//                   }
+//                 }*/
+//
+//         return resolve(util.arrayBalanceToObject(result));
+//       });
+//   });
+// }
+//
+// function getBalanceHaveToOthers(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
+//   return new Promise((resolve, reject) => {
+//     let balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description);
+//     /*
+//         if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+//           let otherTypes = _.remove(transactionTypes, (i) => i !== typeOfTransaction.CASH_IN);
+//           if (!otherTypes || !otherTypes.length) {
+//             otherTypes = [-1];
+//           }
+//
+//           balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, otherTypes, startDate, endDate, description);
+//         }*/
+//
+//     db.collection('transactions')
+//       .aggregate([
+//         balanceMatch,
+//         isHaveToOthersField,
+//         isHaveToOthersMatch,
+//         balanceSort,
+//         groupByOwnerBalance,
+//         balanceProject
+//       ])
+//       .toArray((err, result) => {
+//         if (err) {
+//           return reject(err);
+//         }
+//
+//         /*if (transactionTypes && transactionTypes.length) {
+//           // if the query contains quota but not cash in
+//           if (transactionTypes.indexOf(typeOfTransaction.QUOTA) >= 0 && transactionTypes.indexOf(typeOfTransaction.CASH_IN) < 0) {
+//             balanceMatch.$match.admin = true;
+//             balanceMatch.$match.type = typeOfTransaction.QUOTA;
+//
+//             return db.collection('transactions')
+//               .aggregate([
+//                 balanceMatch,
+//                 {
+//                   $addFields: {
+//                     isHaveToOthers: {$ne: ['$userId', '$driver']}
+//                   }
+//                 },
+//                 isHaveToOthersMatch,
+//                 balanceSort,
+//                 {
+//                   $group: {
+//                     _id: {
+//                       businessId: '$businessId',
+//                       type: '$type',
+//                       owner: '$driver'
+//                     },
+//                     lastUpdate: {$first: '$date'},
+//                     driverSaving: {
+//                       $sum: '$driverSaving'
+//                     }
+//                   }
+//                 },
+//                 balanceProject
+//               ])
+//               .toArray((err, resultDriverSaving) => {
+//                 if (err) {
+//                   return reject(err);
+//                 }
+//
+//                 return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+//               });
+//           } else if (transactionTypes.indexOf(typeOfTransaction.CASH_IN) >= 0 && transactionTypes.indexOf(typeOfTransaction.QUOTA) < 0) {
+//             balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, [typeOfTransaction.CASH_IN], startDate, endDate, description);
+//             balanceMatch.$match.driver = {$exists: false};
+//
+//             return db.collection('transactions')
+//               .aggregate([
+//                 balanceMatch,
+//                 isHaveToOthersField,
+//                 isHaveToOthersMatch,
+//                 balanceSort,
+//                 groupByOwnerBalance,
+//                 balanceProject
+//               ])
+//               .toArray((err, resultDriverSaving) => {
+//                 if (err) {
+//                   return reject(err);
+//                 }
+//
+//                 return resolve(util.arrayBalanceToObject(_.concat(result, resultDriverSaving)));
+//               });
+//           }
+//         }*/
+//
+//         return resolve(util.arrayBalanceToObject(result));
+//       });
+//   });
+// }
+//
+// function getBalanceOthersHave(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
+//   return new Promise((resolve, reject) => {
+//     db.collection('transactions')
+//       .aggregate([
+//         {
+//           $match: {
+//             owner: userId
+//           }
+//         },
+//         {
+//           $match: _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description)
+//         },
+//         {
+//           $addFields: {
+//             isOthersHave: {$ne: ['$userId', '$owner']}
+//           }
+//         },
+//         {
+//           $match: {
+//             isOthersHave: true
+//           }
+//         },
+//         balanceSort,
+//         groupByOwnerBalance,
+//         balanceProject
+//       ])
+//       .toArray((err, result) => {
+//         if (err) {
+//           return reject(err);
+//         }
+//
+//         return resolve(util.arrayBalanceToObject(result));
+//       });
+//   });
+// }
 
 function getUserBalancePerMonth(businessId, userId, admin) {
   return new Promise((resolve, reject) => {
@@ -1107,41 +1158,41 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   return match;
 }
 
-function _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description) {
+// function _getBalancesFilters(businessId, transactionTypes, startDate, endDate, description) {
+//   let match = {
+//     businessId,
+//     admin: false,
+//     active: true,
+//     activeGroup: true
+//   };
+//
+//   if (transactionTypes && transactionTypes.length) {
+//     match.type = {$in: transactionTypes};
+//   }
+//
+//   if (startDate) {
+//     const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+//     match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
+//   }
+//
+//   if (endDate) {
+//     const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
+//     match.date = match.date || {};
+//     match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
+//   }
+//
+//   if (description) {
+//     match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
+//   }
+//
+//   return match;
+// }
+
+function _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description) {
   let match = {
+    owner: userId,
     businessId,
-    admin: false,
-    active: true,
-    activeGroup: true
-  };
-
-  if (transactionTypes && transactionTypes.length) {
-    match.type = {$in: transactionTypes};
-  }
-
-  if (startDate) {
-    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
-    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
-  }
-
-  if (endDate) {
-    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
-    match.date = match.date || {};
-    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
-  }
-
-  if (description) {
-    match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
-  }
-
-  return match;
-}
-
-function _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, endDate, description) {
-  let match = {
-    userId,
-    businessId,
-    admin: false,
+    admin,
     active: true,
     activeGroup: true
   };
@@ -1171,5 +1222,34 @@ function _getBalancesFiltersV2(userId, businessId, transactionTypes, startDate, 
 }
 
 function _normalizedDescription(transaction) {
-  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}`;
+  let transactionType = '';
+
+  switch (item.type) {
+    case typeOfTransaction.QUOTA: {
+      transactionType = 'producido';
+      break;
+    }
+    case typeOfTransaction.EXPENSE: {
+      transactionType = 'gasto';
+      break;
+    }
+    case typeOfTransaction.CASH_OUT: {
+      transactionType = 'retiro de dinero';
+      break;
+    }
+    case typeOfTransaction.CASH_IN: {
+      transactionType = 'ingreso de dinero';
+      break;
+    }
+    case typeOfTransaction.PEAK_AND_PLATE: {
+      transactionType = 'pico y placa | dia de descanso';
+      break;
+    }
+    case typeOfTransaction.STRANDED: {
+      transactionType = 'incidente';
+      break;
+    }
+  }
+
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}`;
 }

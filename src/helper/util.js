@@ -8,6 +8,7 @@ module.exports = {
   generateImages,
   getUserBalance,
   getUserBalancePerBusiness,
+  transactionBalancesToObject,
   getGroupBalance,
   putImage,
   removeAccents,
@@ -155,6 +156,69 @@ function arrayBalanceToObject(balanceArray) {
   balance.total = balance.deposits + balance.cashIn + balance.savings - balance.cashOut - balance.expenses;
 
   return balance;
+}
+
+function transactionBalancesToObject(balanceArray) {
+  let balanceMine = {
+    deposits: 0,
+    expenses: 0,
+    cashOut: 0,
+    cashIn: 0,
+    peekAndPlate: 0,
+    stranded: 0,
+    savings: 0,
+    lastUpdate: 0
+  };
+  let balanceHaveToOthers = {
+    deposits: 0,
+    expenses: 0,
+    cashOut: 0,
+    cashIn: 0,
+    peekAndPlate: 0,
+    stranded: 0,
+    savings: 0,
+    lastUpdate: 0
+  };
+  let balanceOthersHave = {
+    deposits: 0,
+    expenses: 0,
+    cashOut: 0,
+    cashIn: 0,
+    peekAndPlate: 0,
+    stranded: 0,
+    savings: 0,
+    lastUpdate: 0
+  };
+
+  if (balanceArray && balanceArray.length) {
+    balanceArray.forEach((item) => {
+      const balanceProperty = _getBalanceProperty(item);
+
+      if (item.balanceMine) {
+        balanceMine[balanceProperty] += item.balanceMine || 0;
+        balanceMine.savings += item.savings || 0;
+        balanceMine.lastUpdate = Math.max(item.lastUpdate || 0, balanceMine.lastUpdate);
+      }
+
+      if (item.balanceHaveToOthers) {
+        balanceHaveToOthers[balanceProperty] += item.balanceHaveToOthers || 0;
+        balanceHaveToOthers.savings += item.savings || 0;
+        balanceHaveToOthers.lastUpdate = Math.max(item.lastUpdate || 0, balanceHaveToOthers.lastUpdate);
+      }
+
+      if (item.balanceOthersHave) {
+        balanceOthersHave[balanceProperty] += item.balanceOthersHave || 0;
+        balanceOthersHave.savings += item.savings || 0;
+        balanceOthersHave.lastUpdate = Math.max(item.lastUpdate || 0, balanceOthersHave.lastUpdate);
+      }
+    });
+  }
+
+  return {
+    balanceMine,
+    balanceHaveToOthers,
+    balanceOthersHave
+  };
 }
 
 function balancesToUsers(userIds, result) {
@@ -414,4 +478,29 @@ function _saveRenditions(filename, renditions) {
         });
     });
   }
+}
+
+function _getBalanceProperty(item) {
+  switch (item.type) {
+    case typeOfTransaction.QUOTA: {
+      return 'deposits';
+    }
+    case typeOfTransaction.EXPENSE: {
+      return 'expenses';
+    }
+    case typeOfTransaction.CASH_OUT: {
+      return 'cashOut';
+    }
+    case typeOfTransaction.CASH_IN: {
+      return 'cashIn';
+    }
+    case typeOfTransaction.PEAK_AND_PLATE: {
+      return 'peekAndPlate';
+    }
+    case typeOfTransaction.STRANDED: {
+      return 'stranded';
+    }
+  }
+
+  return '';
 }
