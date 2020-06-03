@@ -1224,7 +1224,7 @@ function _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, star
 function _normalizedDescription(transaction) {
   let transactionType = '';
 
-  switch (item.type) {
+  switch (transaction.type) {
     case typeOfTransaction.QUOTA: {
       transactionType = 'producido';
       break;
