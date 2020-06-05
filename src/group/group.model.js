@@ -153,8 +153,7 @@ function getDefaultGroupIds(userId) {
     return db.collection('groups')
       .find(
         {
-          managerId: userId,
-          active: true
+          managerId: userId
         },
         {
           _id: '$group._id'
@@ -165,7 +164,7 @@ function getDefaultGroupIds(userId) {
           return reject(err);
         }
 
-        return resolve(result);
+        return resolve(result.map(r => r._id));
       });
   });
 }
