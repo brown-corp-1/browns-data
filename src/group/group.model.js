@@ -3,6 +3,9 @@ module.exports = {
   add,
   addUserToGroup,
   find,
+  getDefaultGroupId,
+  getDefaultGroupIds,
+  getDefaultBusinessGroupId,
   remove,
   update
 };
@@ -37,7 +40,9 @@ function update(groupId, name) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(result.result);
         });
@@ -112,9 +117,89 @@ function find(userId) {
         }
       ])
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         return resolve(result);
+      });
+  });
+}
+
+function getDefaultGroupId(userId, businessId) {
+  return new Promise((resolve, reject) => {
+    return db.collection('groups')
+      .find(
+        {
+          managerId: userId,
+          active: true
+        },
+        {
+          _id: '$group._id'
+        }
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result && result.length ? result[0]._id : null);
+      });
+  });
+}
+
+function getDefaultGroupIds(userId) {
+  return new Promise((resolve, reject) => {
+    return db.collection('groups')
+      .find(
+        {
+          managerId: userId
+        },
+        {
+          _id: '$group._id'
+        }
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result.map(r => r._id));
+      });
+  });
+}
+
+function getDefaultBusinessGroupId(userId, businessId) {
+  return new Promise((resolve, reject) => {
+    return db.collection('businessGroups')
+      .find(
+        {
+          userId,
+          $or: [
+            {
+              managedIds: {
+                $elemMatch: {$eq: businessId}
+              }
+            },
+            {
+              businessIds: {
+                $elemMatch: {$eq: businessId}
+              }
+            }
+          ]
+        },
+        {
+          $project: {
+            groupId: 1
+          }
+        }
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result && result.length ? result[0].groupId : null);
       });
   });
 }
@@ -135,7 +220,9 @@ function _updateGroupActive(groupIds, isActive) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(result.result);
         });

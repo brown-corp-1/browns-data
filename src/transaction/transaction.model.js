@@ -1,4 +1,8 @@
 module.exports = {
+  v2: {
+    getUserBalancePerMonth: getUserBalancePerMonthV2,
+    getUserBalancePerDay: getUserBalancePerDayV2,
+  },
   add,
   addMany,
   get,
@@ -6,6 +10,10 @@ module.exports = {
   getRecord,
   getByData,
   getBalance,
+  getBalances,
+  // getBalanceMine,
+  // getBalanceHaveToOthers,
+  // getBalanceOthersHave,
   getUserBalancePerMonth,
   getUserBalancePerDay,
   getTree,
@@ -14,6 +22,8 @@ module.exports = {
   removeChildren
 };
 
+const _ = require('lodash');
+const {typeOfTransaction} = require('./transaction.constant');
 const Promise = require('promise');
 const util = require('../helper/util');
 
@@ -23,7 +33,6 @@ const businessLookup = {
   foreignField: '_id',
   as: 'business'
 };
-
 const fields = {
   _id: 1,
   owner: 1,
@@ -37,6 +46,7 @@ const fields = {
   parentId: 1,
   lstImages: 1,
   description: 1,
+  normalizedDescription: 1,
   driverSaving: 1,
   businessId: 1,
   groupId: 1,
@@ -46,7 +56,59 @@ const fields = {
   schema: 1,
   totalFee: 1,
   driverPercentage: 1,
+  balanceMine: 1,
+  balanceHaveToOthers: 1,
+  balanceOthersHave: 1,
   active: 1
+};
+const balanceSort = {
+  $sort: {date: -1}
+};
+const balanceProject = {
+  $project: {
+    _id: 0,
+    userId: '$_id.owner',
+    type: '$_id.type',
+    lastUpdate: '$lastUpdate',
+    savings: '$driverSaving',
+    total: '$total'
+  }
+};
+const groupByOwnerBalance = {
+  $group: {
+    _id: {
+      businessId: '$businessId',
+      type: '$type',
+      owner: '$owner'
+    },
+    lastUpdate: {$first: '$date'},
+    driverSaving: {
+      $sum: '$driverSaving'
+    },
+    total: {
+      $sum: '$value'
+    }
+  }
+};
+const isHaveToOthersMatch = {
+  $match: {
+    isHaveToOthers: true
+  }
+};
+const isMineMatch = {
+  $match: {
+    isMine: true
+  }
+};
+const isHaveToOthersField = {
+  $addFields: {
+    isHaveToOthers: {$ne: ['$userId', '$owner']}
+  }
+};
+const isMineField = {
+  $addFields: {
+    isMine: {$eq: ['$userId', '$owner']}
+  }
 };
 
 function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, startDate, endDate, description) {
@@ -395,6 +457,55 @@ function getBalance(businessId, userId, admin, transactionTypes, startDate, endD
   });
 }
 
+function getBalances(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
+  return new Promise((resolve, reject) => {
+    let balanceMatch = _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description);
+
+    db.collection('transactions')
+      .aggregate([
+        balanceMatch,
+        balanceSort,
+        {
+          $group: {
+            _id: {
+              businessId: '$businessId',
+              type: '$type',
+              owner: '$owner'
+            },
+            lastUpdate: {$first: '$date'},
+            balanceMine: {
+              $sum: '$balanceMine'
+            },
+            balanceHaveToOthers: {
+              $sum: '$balanceHaveToOthers'
+            },
+            balanceOthersHave: {
+              $sum: '$balanceOthersHave'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            userId: '$_id.owner',
+            type: '$_id.type',
+            lastUpdate: '$lastUpdate',
+            balanceMine: '$balanceMine',
+            balanceHaveToOthers: '$balanceHaveToOthers',
+            balanceOthersHave: '$balanceOthersHave'
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(util.transactionBalancesToObject(result));
+      });
+  });
+}
+
 function getUserBalancePerMonth(businessId, userId, admin) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
@@ -443,6 +554,140 @@ function getUserBalancePerMonth(businessId, userId, admin) {
         }
 
         return resolve(util.consolidateMontlyBalances(result));
+      });
+  });
+}
+
+function getUserBalancePerMonthV2(businessId, userId) {
+  return new Promise((resolve, reject) => {
+    const groupBy = {
+      $group: {
+        _id: {
+          type: '$type',
+          month: {
+            $month: '$date'
+          },
+          year: {
+            $year: '$date'
+          }
+        },
+        driverSaving: {
+          $sum: '$driverSaving'
+        },
+        total: {
+          $sum: '$value'
+        }
+      }
+    };
+    const project = {
+      $project: {
+        _id: 0,
+        type: '$_id.type',
+        month: '$_id.month',
+        year: '$_id.year',
+        savings: '$driverSaving',
+        total: '$total'
+      }
+    };
+    const match = {
+      businessId,
+      admin: false,
+      active: true
+    };
+    let balances = {
+      mine: [],
+      haveToOthers: [],
+      othersHave: []
+    };
+
+    // Mine
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: Object.assign({}, match, {
+            userId,
+            owner: userId
+          })
+        },
+        {
+          $addFields: {
+            isMine: {$eq: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match: {
+            isMine: true
+          }
+        },
+        groupBy,
+        project
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        balances.mine = util.consolidateMontlyBalances(result);
+
+        // Have To Others
+        db.collection('transactions')
+          .aggregate([
+            {
+              $match: Object.assign({}, match, {
+                userId
+              })
+            },
+            {
+              $addFields: {
+                isHaveToThers: {$ne: ['$userId', '$owner']}
+              }
+            },
+            {
+              $match: {
+                isHaveToThers: true
+              }
+            },
+            groupBy,
+            project
+          ])
+          .toArray((err, result) => {
+            if (err) {
+              return reject(err);
+            }
+
+            balances.haveToOthers = util.consolidateMontlyBalances(result);
+
+            // Others have
+            db.collection('transactions')
+              .aggregate([
+                {
+                  $match: Object.assign({}, match, {
+                    owner: userId
+                  })
+                },
+                {
+                  $addFields: {
+                    isOthersHave: {$ne: ['$userId', '$owner']}
+                  }
+                },
+                {
+                  $match: {
+                    isOthersHave: true
+                  }
+                },
+                groupBy,
+                project
+              ])
+              .toArray((err, result) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                balances.othersHave = util.consolidateMontlyBalances(result);
+
+                return resolve(balances);
+              });
+          });
       });
   });
 }
@@ -503,6 +748,144 @@ function getUserBalancePerDay(businessId, userId, admin) {
   });
 }
 
+function getUserBalancePerDayV2(businessId, userId) {
+  return new Promise((resolve, reject) => {
+    const groupBy = {
+      $group: {
+        _id: {
+          type: '$type',
+          month: {
+            $month: '$date'
+          },
+          year: {
+            $year: '$date'
+          },
+          day: {
+            $dayOfMonth: '$date'
+          }
+        },
+        driverSaving: {
+          $sum: '$driverSaving'
+        },
+        total: {
+          $sum: '$value'
+        }
+      }
+    };
+    const project = {
+      $project: {
+        _id: 0,
+        type: '$_id.type',
+        day: '$_id.day',
+        month: '$_id.month',
+        year: '$_id.year',
+        savings: '$driverSaving',
+        total: '$total'
+      }
+    };
+    const match = {
+      businessId,
+      admin: false,
+      active: true
+    };
+    let balances = {
+      mine: [],
+      haveToOthers: [],
+      othersHave: []
+    };
+
+    // Mine
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: Object.assign({}, match, {
+            userId,
+            owner: userId
+          })
+        },
+        {
+          $addFields: {
+            isMine: {$eq: ['$userId', '$owner']}
+          }
+        },
+        {
+          $match: {
+            isMine: true
+          }
+        },
+        groupBy,
+        project
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        balances.mine = util.consolidateDailyBalances(result);
+
+        // Have to others
+        db.collection('transactions')
+          .aggregate([
+            {
+              $match: Object.assign({}, match, {
+                userId
+              })
+            },
+            {
+              $addFields: {
+                isHaveToOthers: {$ne: ['$userId', '$owner']}
+              }
+            },
+            {
+              $match: {
+                isHaveToOthers: true
+              }
+            },
+            groupBy,
+            project
+          ])
+          .toArray((err, result) => {
+            if (err) {
+              return reject(err);
+            }
+
+            balances.haveToOthers = util.consolidateDailyBalances(result);
+
+            // Others have
+            db.collection('transactions')
+              .aggregate([
+                {
+                  $match: Object.assign({}, match, {
+                    owner: userId
+                  })
+                },
+                {
+                  $addFields: {
+                    isOthersHave: {$ne: ['$userId', '$owner']}
+                  }
+                },
+                {
+                  $match: {
+                    isOthersHave: true
+                  }
+                },
+                groupBy,
+                project
+              ])
+              .toArray((err, result) => {
+                if (err) {
+                  return reject(err);
+                }
+
+                balances.othersHave = util.consolidateDailyBalances(result);
+
+                return resolve(balances);
+              });
+          });
+      });
+  });
+}
+
 function _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description) {
   let match = {
     businessId,
@@ -533,6 +916,68 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   return match;
 }
 
+function _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, startDate, endDate, description) {
+  let match = {
+    owner: userId,
+    businessId,
+    admin,
+    active: true,
+    activeGroup: true
+  };
+
+  if (transactionTypes && transactionTypes.length) {
+    match.type = {$in: transactionTypes};
+  }
+
+  if (startDate) {
+    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
+    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
+  }
+
+  if (endDate) {
+    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
+    match.date = match.date || {};
+    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
+  }
+
+  if (description) {
+    match.normalizedDescription = {$regex: util.removeAccents(description), $options: '$i'};
+  }
+
+  return {
+    $match: match
+  };
+}
+
 function _normalizedDescription(transaction) {
-  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}`;
+  let transactionType = '';
+
+  switch (transaction.type) {
+    case typeOfTransaction.QUOTA: {
+      transactionType = 'producido';
+      break;
+    }
+    case typeOfTransaction.EXPENSE: {
+      transactionType = 'gasto';
+      break;
+    }
+    case typeOfTransaction.CASH_OUT: {
+      transactionType = 'retiro de dinero';
+      break;
+    }
+    case typeOfTransaction.CASH_IN: {
+      transactionType = 'ingreso de dinero';
+      break;
+    }
+    case typeOfTransaction.PEAK_AND_PLATE: {
+      transactionType = 'pico y placa | dia de descanso';
+      break;
+    }
+    case typeOfTransaction.STRANDED: {
+      transactionType = 'incidente';
+      break;
+    }
+  }
+
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}`;
 }
