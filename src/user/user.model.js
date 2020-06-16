@@ -39,7 +39,8 @@ function get(userId) {
             phone: 1,
             photo: 1,
             spotlights: 1,
-            hasLoggedIn: 1
+            hasLoggedIn: 1,
+            plan: 1
           }
         })
       .limit(1)
