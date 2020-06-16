@@ -11,6 +11,7 @@ const {typeOfTransaction} = require('./src/transaction/transaction.constant');
 const {emailState, emailType} = require('./src/email/email.constant');
 const {groupConstants} = require('./src/group/group.constant');
 const userConstants = require('./src/user/user.constant');
+const paymentConstants = require('./src/payment/payment.constant');
 
 // @models
 const balanceModel = require('./src/balance/balance.model');
@@ -22,6 +23,7 @@ const userModel = require('./src/user/user.model');
 const groupModel = require('./src/group/group.model');
 const businessGroupModel = require('./src/business-group/business-group.model');
 const permissionModel = require('./src/permission/permission.model');
+const paymentModel = require('./src/payment/payment.model');
 
 module.exports = {
   init,
@@ -31,6 +33,7 @@ module.exports = {
   tokenModel,
   balanceModel,
   businessConstants,
+  paymentConstants,
   userConstants,
   businessModel,
   transactionModel,
@@ -42,6 +45,7 @@ module.exports = {
   emailState,
   groupConstants,
   permissionModel,
+  paymentModel,
   job
 };
 
@@ -51,7 +55,8 @@ function init(config) {
   return new Promise((resolve, reject) => {
     const options = {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      poolSize: 10
     };
 
     MongoClient.connect(config.brownsData.db, options, (err, client) => {

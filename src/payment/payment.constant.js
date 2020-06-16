@@ -1,18 +1,23 @@
-module.exports = {
-  products: [
-    {
-      id: 'free',
-      name: 'payment_product_free',
-      limits: {
-        transactions: 100
-      }
-    },
-    {
-      id: 'premium',
-      name: 'payment_product_premium',
-      limits: {
-        transactions: 1000
-      }
+const products = [
+  {
+    id: 'free',
+    name: 'payment_product_free',
+    isPremium: false,
+    limits: {
+      transactions: 100
     }
-  ]
+  },
+  {
+    id: 'premium',
+    name: 'payment_product_premium',
+    isPremium: true,
+    limits: {
+      transactions: 1000
+    }
+  }
+];
+
+module.exports = {
+  currentFreePlan: products[0],
+  products
 };
