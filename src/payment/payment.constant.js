@@ -1,6 +1,6 @@
 const products = [
   {
-    id: 'free',
+    productId: 'free',
     name: 'payment_product_free',
     isPremium: false,
     limits: {
@@ -8,7 +8,7 @@ const products = [
     }
   },
   {
-    id: 'premium',
+    productId: 'premium',
     name: 'payment_product_premium',
     isPremium: true,
     limits: {

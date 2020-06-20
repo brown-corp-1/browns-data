@@ -1,10 +1,10 @@
 module.exports = {
-  addPlayStorePayment
+  addPlayStorePurchase
 };
 
 const Promise = require('promise');
 
-function addPlayStorePayment(userId, plan, playStorePurchase) {
+function addPlayStorePurchase(userId, plan, playStorePurchase) {
   return new Promise((resolve, reject) => {
     db.collection('users')
       .updateOne(
