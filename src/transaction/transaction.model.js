@@ -899,14 +899,11 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   if (startDate) {
-    const userTimezoneOffset = startDate.getTimezoneOffset() * 60000;
-    match.date = {$gte: new Date(startDate.getTime() - userTimezoneOffset)};
+    match.date = {$gte: startDate};
   }
 
   if (endDate) {
-    const userTimezoneOffset = endDate.getTimezoneOffset() * 60000;
-    match.date = match.date || {};
-    match.date.$lte = new Date(endDate.getTime() - userTimezoneOffset + (1000 * 60 * 60 * 24) - 1);
+    match.date.$lte = endDate;
   }
 
   if (description) {
