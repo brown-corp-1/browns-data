@@ -903,7 +903,8 @@ function _getFilters(businessId, userId, admin, transactionTypes, startDate, end
   }
 
   if (endDate) {
-    match.date.$lte = endDate;
+    match.date = match.date || {};
+    match.date.$lte = new Date(endDate.getTime() + (1000 * 60 * 60 * 24 - 1));
   }
 
   if (description) {
@@ -932,7 +933,7 @@ function _getBalancesFiltersV2(userId, businessId, admin, transactionTypes, star
 
   if (endDate) {
     match.date = match.date || {};
-    match.date.$lte = endDate;
+    match.date.$lte = new Date(endDate.getTime() + (1000 * 60 * 60 * 24 - 1));
   }
 
   if (description) {
