@@ -285,8 +285,7 @@ function findUsers(userId) {
       .aggregate([
         {
           $match: {
-            userId,
-            active: true
+            userId
           }
         },
         {
