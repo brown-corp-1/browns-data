@@ -1,7 +1,7 @@
 module.exports = {
   v2: {
     getUserBalancePerMonth: getUserBalancePerMonthV2,
-    getUserBalancePerDay: getUserBalancePerDayV2,
+    getUserBalancePerDay: getUserBalancePerDayV2
   },
   add,
   addMany,
@@ -11,9 +11,6 @@ module.exports = {
   getByData,
   getBalance,
   getBalances,
-  // getBalanceMine,
-  // getBalanceHaveToOthers,
-  // getBalanceOthersHave,
   getUserBalancePerMonth,
   getUserBalancePerDay,
   getTree,
@@ -558,136 +555,68 @@ function getUserBalancePerMonth(businessId, userId, admin) {
   });
 }
 
-function getUserBalancePerMonthV2(businessId, userId) {
+function getUserBalancePerMonthV2(businessId, userId, admin) {
   return new Promise((resolve, reject) => {
-    const groupBy = {
-      $group: {
-        _id: {
-          type: '$type',
-          month: {
-            $month: '$date'
-          },
-          year: {
-            $year: '$date'
-          }
-        },
-        driverSaving: {
-          $sum: '$driverSaving'
-        },
-        total: {
-          $sum: '$value'
-        }
-      }
-    };
-    const project = {
-      $project: {
-        _id: 0,
-        type: '$_id.type',
-        month: '$_id.month',
-        year: '$_id.year',
-        savings: '$driverSaving',
-        total: '$total'
-      }
-    };
-    const match = {
-      businessId,
-      admin: false,
-      active: true
-    };
     let balances = {
       mine: [],
       haveToOthers: [],
       othersHave: []
     };
 
-    // Mine
     db.collection('transactions')
       .aggregate([
         {
-          $match: Object.assign({}, match, {
-            userId,
-            owner: userId
-          })
-        },
-        {
-          $addFields: {
-            isMine: {$eq: ['$userId', '$owner']}
-          }
-        },
-        {
           $match: {
-            isMine: true
+            businessId,
+            owner: userId,
+            admin,
+            active: true
           }
         },
-        groupBy,
-        project
+        {
+          $group: {
+            _id: {
+              type: '$type',
+              month: {
+                $month: '$date'
+              },
+              year: {
+                $year: '$date'
+              }
+            },
+            balanceMine: {
+              $sum: '$balanceMine'
+            },
+            balanceHaveToOthers: {
+              $sum: '$balanceHaveToOthers'
+            },
+            balanceOthersHave: {
+              $sum: '$balanceOthersHave'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            type: '$_id.type',
+            month: '$_id.month',
+            year: '$_id.year',
+            balanceMine: '$balanceMine',
+            balanceHaveToOthers: '$balanceHaveToOthers',
+            balanceOthersHave: '$balanceOthersHave'
+          }
+        }
       ])
       .toArray((err, result) => {
         if (err) {
           return reject(err);
         }
 
-        balances.mine = util.consolidateMontlyBalances(result);
+        balances.mine = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceMine), 'balanceMine');
+        balances.haveToOthers = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceHaveToOthers), 'balanceHaveToOthers');
+        balances.othersHave = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceOthersHave), 'balanceOthersHave');
 
-        // Have To Others
-        db.collection('transactions')
-          .aggregate([
-            {
-              $match: Object.assign({}, match, {
-                userId
-              })
-            },
-            {
-              $addFields: {
-                isHaveToThers: {$ne: ['$userId', '$owner']}
-              }
-            },
-            {
-              $match: {
-                isHaveToThers: true
-              }
-            },
-            groupBy,
-            project
-          ])
-          .toArray((err, result) => {
-            if (err) {
-              return reject(err);
-            }
-
-            balances.haveToOthers = util.consolidateMontlyBalances(result);
-
-            // Others have
-            db.collection('transactions')
-              .aggregate([
-                {
-                  $match: Object.assign({}, match, {
-                    owner: userId
-                  })
-                },
-                {
-                  $addFields: {
-                    isOthersHave: {$ne: ['$userId', '$owner']}
-                  }
-                },
-                {
-                  $match: {
-                    isOthersHave: true
-                  }
-                },
-                groupBy,
-                project
-              ])
-              .toArray((err, result) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                balances.othersHave = util.consolidateMontlyBalances(result);
-
-                return resolve(balances);
-              });
-          });
+        return resolve(balances);
       });
   });
 }
@@ -748,140 +677,72 @@ function getUserBalancePerDay(businessId, userId, admin) {
   });
 }
 
-function getUserBalancePerDayV2(businessId, userId) {
+function getUserBalancePerDayV2(businessId, userId, admin) {
   return new Promise((resolve, reject) => {
-    const groupBy = {
-      $group: {
-        _id: {
-          type: '$type',
-          month: {
-            $month: '$date'
-          },
-          year: {
-            $year: '$date'
-          },
-          day: {
-            $dayOfMonth: '$date'
-          }
-        },
-        driverSaving: {
-          $sum: '$driverSaving'
-        },
-        total: {
-          $sum: '$value'
-        }
-      }
-    };
-    const project = {
-      $project: {
-        _id: 0,
-        type: '$_id.type',
-        day: '$_id.day',
-        month: '$_id.month',
-        year: '$_id.year',
-        savings: '$driverSaving',
-        total: '$total'
-      }
-    };
-    const match = {
-      businessId,
-      admin: false,
-      active: true
-    };
     let balances = {
       mine: [],
       haveToOthers: [],
       othersHave: []
     };
 
-    // Mine
     db.collection('transactions')
       .aggregate([
         {
-          $match: Object.assign({}, match, {
-            userId,
-            owner: userId
-          })
-        },
-        {
-          $addFields: {
-            isMine: {$eq: ['$userId', '$owner']}
-          }
-        },
-        {
           $match: {
-            isMine: true
+            businessId,
+            owner: userId,
+            admin,
+            active: true
           }
         },
-        groupBy,
-        project
+        {
+          $group: {
+            _id: {
+              type: '$type',
+              month: {
+                $month: '$date'
+              },
+              year: {
+                $year: '$date'
+              },
+              day: {
+                $dayOfMonth: '$date'
+              }
+            },
+            balanceMine: {
+              $sum: '$balanceMine'
+            },
+            balanceHaveToOthers: {
+              $sum: '$balanceHaveToOthers'
+            },
+            balanceOthersHave: {
+              $sum: '$balanceOthersHave'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            type: '$_id.type',
+            day: '$_id.day',
+            month: '$_id.month',
+            year: '$_id.year',
+            balanceMine: '$balanceMine',
+            balanceHaveToOthers: '$balanceHaveToOthers',
+            balanceOthersHave: '$balanceOthersHave'
+          }
+        }
       ])
       .toArray((err, result) => {
         if (err) {
           return reject(err);
         }
 
-        balances.mine = util.consolidateDailyBalances(result);
+        balances.mine = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceMine), 'balanceMine');
+        balances.haveToOthers = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceHaveToOthers), 'balanceHaveToOthers');
+        balances.othersHave = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceOthersHave), 'balanceOthersHave');
 
-        // Have to others
-        db.collection('transactions')
-          .aggregate([
-            {
-              $match: Object.assign({}, match, {
-                userId
-              })
-            },
-            {
-              $addFields: {
-                isHaveToOthers: {$ne: ['$userId', '$owner']}
-              }
-            },
-            {
-              $match: {
-                isHaveToOthers: true
-              }
-            },
-            groupBy,
-            project
-          ])
-          .toArray((err, result) => {
-            if (err) {
-              return reject(err);
-            }
-
-            balances.haveToOthers = util.consolidateDailyBalances(result);
-
-            // Others have
-            db.collection('transactions')
-              .aggregate([
-                {
-                  $match: Object.assign({}, match, {
-                    owner: userId
-                  })
-                },
-                {
-                  $addFields: {
-                    isOthersHave: {$ne: ['$userId', '$owner']}
-                  }
-                },
-                {
-                  $match: {
-                    isOthersHave: true
-                  }
-                },
-                groupBy,
-                project
-              ])
-              .toArray((err, result) => {
-                if (err) {
-                  return reject(err);
-                }
-
-                balances.othersHave = util.consolidateDailyBalances(result);
-
-                return resolve(balances);
-              });
-          });
+        return resolve(balances);
       });
   });
 }

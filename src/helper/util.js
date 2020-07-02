@@ -4,7 +4,9 @@ module.exports = {
   createFolder,
   createFolders,
   consolidateDailyBalances,
+  consolidateDailyBalancesV2,
   consolidateMontlyBalances,
+  consolidateMontlyBalancesV2,
   generateImages,
   getUserBalance,
   getUserBalancePerBusiness,
@@ -30,6 +32,8 @@ function createFolder(folder) {
   }
 }
 
+
+// @Deprecated
 function consolidateMontlyBalances(balanceArray) {
   let balances = {};
 
@@ -60,6 +64,37 @@ function consolidateMontlyBalances(balanceArray) {
   return Object.keys(balances).map((key) => balances[key]);
 }
 
+function consolidateMontlyBalancesV2(balanceArray, valueProperty) {
+  let balances = {};
+
+  balanceArray.forEach((balance) => {
+    const key = balance.year + ' ' + balance.month;
+
+    if (!balances[key]) {
+      balances[key] = {
+        year: balance.year,
+        month: balance.month
+      };
+    }
+
+    if (balance.type === typeOfTransaction.QUOTA) {
+      balances[key].deposits = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.EXPENSE) {
+      balances[key].expenses = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.CASH_OUT) {
+      balances[key].cashOut = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.CASH_IN) {
+      balances[key].cashIn = balance[valueProperty];
+    }
+  });
+
+  return Object.keys(balances).map((key) => balances[key]);
+}
+
+// @deprecated
 function consolidateDailyBalances(balanceArray) {
   let balances = {};
 
@@ -85,6 +120,37 @@ function consolidateDailyBalances(balanceArray) {
     }
     if (balance.type === typeOfTransaction.CASH_IN) {
       balances[key].cashIn = balance.total;
+    }
+  });
+
+  return Object.keys(balances).map((key) => balances[key]);
+}
+
+function consolidateDailyBalancesV2(balanceArray, valueProperty) {
+  let balances = {};
+
+  balanceArray.forEach((balance) => {
+    const key = balance.year + ' ' + balance.month + ' ' + balance.day;
+
+    if (!balances[key]) {
+      balances[key] = {
+        year: balance.year,
+        month: balance.month,
+        day: balance.day
+      };
+    }
+
+    if (balance.type === typeOfTransaction.QUOTA) {
+      balances[key].deposits = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.EXPENSE) {
+      balances[key].expenses = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.CASH_OUT) {
+      balances[key].cashOut = balance[valueProperty];
+    }
+    if (balance.type === typeOfTransaction.CASH_IN) {
+      balances[key].cashIn = balance[valueProperty];
     }
   });
 
