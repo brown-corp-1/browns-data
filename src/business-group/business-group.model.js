@@ -111,8 +111,7 @@ function getAllBusinesses(userId) {
   return new Promise((resolve, reject) => {
     db.collection('businessGroups')
       .find({
-        userId,
-        active: true
+        userId
       })
       .toArray((err, result) => {
         if (err) {
@@ -286,8 +285,7 @@ function findUsers(userId) {
       .aggregate([
         {
           $match: {
-            userId,
-            active: true
+            userId
           }
         },
         {
