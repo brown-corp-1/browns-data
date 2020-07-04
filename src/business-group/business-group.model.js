@@ -349,36 +349,54 @@ function findUsers(userId) {
                   return reject(err);
                 }
 
-                const managedGroups = groupsResults
-                  .filter(r => r.managedIds && r.managedIds.length)
-                  .map(r => r.groupId.toString());
-
-                users.forEach((user) => {
-                  const isNotTheSameUser = user._id.toString() !== userId.toString();
-
-                  user.removedFromManager = isNotTheSameUser ? (user.removedFromManager || false) : false;
-                  user.businesses = user.businesses || [];
-                  user.currentBusinesses = user.currentBusinesses || [];
-
-                  businessGroups.forEach((businessGroup) => {
-                    if (businessGroup.userId.toString() === user._id.toString()) {
-                      if (managedGroups.indexOf(businessGroup.groupId.toString()) >= 0) {
-                        user.invitedByMe = true;
-                        user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
+                db.collection('groups')
+                  .aggregate([
+                    {
+                      $match: {
+                        managerId: userId
                       }
-
-                      if (businessGroup.businessIds && businessGroup.businessIds.length) {
-                        user.businesses = user.businesses.concat(businessGroup.businessIds);
-                      }
-
-                      if (businessGroup.currentBusiness) {
-                        user.currentBusinesses.push(currentBusiness);
+                    },
+                    {
+                      $project: {
+                        _id: 1
                       }
                     }
-                  });
-                })
+                  ])
+                  .toArray((err, managedGroups) => {
+                    if (err) {
+                      return reject(err);
+                    }
 
-                return resolve(users);
+                    managedGroups = managedGroups
+                      .map(r => r._id.toString());
+
+                    users.forEach((user) => {
+                      const isNotTheSameUser = user._id.toString() !== userId.toString();
+
+                      user.removedFromManager = isNotTheSameUser ? (user.removedFromManager || false) : false;
+                      user.businesses = user.businesses || [];
+                      user.currentBusinesses = user.currentBusinesses || [];
+
+                      businessGroups.forEach((businessGroup) => {
+                        if (businessGroup.userId.toString() === user._id.toString()) {
+                          if (managedGroups.indexOf(businessGroup.groupId.toString()) >= 0) {
+                            user.invitedByMe = true;
+                            user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
+                          }
+
+                          if (businessGroup.businessIds && businessGroup.businessIds.length) {
+                            user.businesses = user.businesses.concat(businessGroup.businessIds);
+                          }
+
+                          if (businessGroup.currentBusiness) {
+                            user.currentBusinesses.push(currentBusiness);
+                          }
+                        }
+                      });
+                    });
+
+                    return resolve(users);
+                  });
               });
           });
       });
