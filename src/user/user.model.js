@@ -45,7 +45,9 @@ function get(userId) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
         return resolve(result[0]);
       });
   });
@@ -73,7 +75,9 @@ function getByEmail(email) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         if (result.length) {
           result[0].password = !!result[0].password;
@@ -118,7 +122,9 @@ function getByEmailOrPhone(email, phone) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         if (result.length) {
           result[0].password = !!result[0].password;
@@ -151,7 +157,9 @@ function getByFacebookId(facebookId) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         if (result.length) {
           return resolve(result[0]);
@@ -182,7 +190,9 @@ function getByGoogleId(googleId) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         if (result.length) {
           return resolve(result[0]);
@@ -195,6 +205,10 @@ function getByGoogleId(googleId) {
 
 function exist(email, phone) {
   return new Promise((resolve, reject) => {
+    if (!email && !phone) {
+      resolve();
+    }
+
     let match = {
       $or: []
     };
@@ -220,7 +234,9 @@ function exist(email, phone) {
       )
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
         return resolve(result.length);
       });
   });
@@ -247,7 +263,9 @@ function login(userId, password) {
       })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
         return resolve(result[0]);
       });
   });
@@ -259,7 +277,9 @@ function add(user) {
       .insertOne(
         user,
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
           return resolve(result.insertedId);
         });
   });
@@ -284,7 +304,9 @@ function getInvite(userId) {
         })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         if (result.length) {
           result[0].password = !!result[0].password;
@@ -313,7 +335,9 @@ function getUsersInformation(ids) {
           notificationToken: 1
         })
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         return resolve(result);
       });
@@ -372,7 +396,9 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
           $addToSet: arrayData
         },
         (err) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(true);
         });
@@ -434,7 +460,9 @@ function updateImages(userId, photos) {
           $addToSet: arrayData
         },
         (err) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(true);
         });
@@ -454,7 +482,9 @@ function setSpotlight(userId, spotlightKey) {
           }
         },
         (err) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(true);
         });
@@ -477,7 +507,9 @@ function resetPassword(userId) {
           }
         },
         (err) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(true);
         });
@@ -500,7 +532,9 @@ function updatePassword(resetToken, password) {
           }
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(result);
         });
@@ -520,7 +554,9 @@ function existResetToken(resetToken) {
       })
       .limit(1)
       .toArray((err, result) => {
-        if (err) { return reject(err); }
+        if (err) {
+          return reject(err);
+        }
 
         return resolve(result && result.length ? result[0] : null);
       });
@@ -540,7 +576,9 @@ function cleanResetPasswordToken() {
           }
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(result);
         });
@@ -567,7 +605,9 @@ function updateLoginInfo(userId, notificationToken) {
           $set: data
         },
         (err, result) => {
-          if (err) { return reject(err); }
+          if (err) {
+            return reject(err);
+          }
 
           return resolve(result);
         });
