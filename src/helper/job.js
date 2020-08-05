@@ -39,6 +39,7 @@ function createIndexes() {
     db.collection('businessGroups').createIndex({businessIds: 1});
     db.collection('businessGroups').createIndex({active: 1});
     db.collection('businessGroups').createIndex({drivenIds: 1});
+    db.collection('documents').createIndex({businessId: 1});
     db.collection('balances').createIndex({userId: 1});
     db.collection('balances').createIndex({owner: 1});
     db.collection('balances').createIndex({businessId: 1});

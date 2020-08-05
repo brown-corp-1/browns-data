@@ -116,9 +116,6 @@ function get(businessId, userId, admin, pageNumber, pageSize, transactionTypes, 
           $match: _getFilters(businessId, userId, admin, transactionTypes, startDate, endDate, description)
         },
         {
-          $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
-        },
-        {
           $sort: {date: -1, creationDate: -1}
         },
         {
@@ -738,9 +735,9 @@ function getUserBalancePerDayV2(businessId, userId, admin) {
           return reject(err);
         }
 
-        balances.mine = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceMine), 'balanceMine');
-        balances.haveToOthers = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceHaveToOthers), 'balanceHaveToOthers');
-        balances.othersHave = util.consolidateDailyBalancesV2(_.filter(result, (r)=> !!r.balanceOthersHave), 'balanceOthersHave');
+        balances.mine = util.consolidateDailyBalancesV2(_.filter(result, (r) => !!r.balanceMine), 'balanceMine');
+        balances.haveToOthers = util.consolidateDailyBalancesV2(_.filter(result, (r) => !!r.balanceHaveToOthers), 'balanceHaveToOthers');
+        balances.othersHave = util.consolidateDailyBalancesV2(_.filter(result, (r) => !!r.balanceOthersHave), 'balanceOthersHave');
 
         return resolve(balances);
       });
