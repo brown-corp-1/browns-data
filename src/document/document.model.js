@@ -77,7 +77,8 @@ function find(ids) {
     db.collection('documents')
       .find(
         {
-          businessId: {$in: ids}
+          businessId: {$in: ids},
+          active: true
         },
         {
           projection: {
