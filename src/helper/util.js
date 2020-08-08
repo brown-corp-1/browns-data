@@ -1,4 +1,7 @@
 module.exports = {
+  v2: {
+    generateImages: generateImagesV2
+  },
   arrayBalanceToObject,
   balancesToUsers,
   createFolder,
@@ -19,6 +22,7 @@ module.exports = {
   saveImages
 };
 
+const _ = require('lodash');
 const fs = require('fs');
 const sharp = require('sharp');
 const {typeOfTransaction} = require('../transaction/transaction.constant');
@@ -569,4 +573,16 @@ function _getBalanceProperty(item) {
   }
 
   return '';
+}
+
+function generateImagesV2(entityId, imagesPath) {
+  const galleyFolder = resourcesFolder + entityId + '/images/' + uuid.v4();
+
+  return _.map(imagesPath, (image) => {
+    if (image.startsWith('file:')) {
+      return galleyFolder.replace(publicFolder, '') + '/' + uuid.v4() + '.jpg';
+    }
+
+    return image;
+  });
 }
