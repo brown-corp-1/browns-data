@@ -339,9 +339,6 @@ function findUsers(userId) {
                     email: 1,
                     hasLoggedIn: 1
                   }
-                },
-                {
-                  $sort: {firstName: 1, lastName: 1}
                 }
               ])
               .toArray((err, users) => {
@@ -370,16 +367,24 @@ function findUsers(userId) {
                     managedGroups = managedGroups
                       .map(r => r._id.toString());
 
+                    businessGroups.forEach((businessGroup) => {
+                      businessGroup.userId = businessGroup.userId.toString();
+                      businessGroup.groupId = businessGroup.groupId.toString();
+                    });
+
+                    const currentUserId = userId.toString();
+
                     users.forEach((user) => {
-                      const isNotTheSameUser = user._id.toString() !== userId.toString();
+                      const _userId = user._id.toString();
+                      const isNotTheSameUser = _userId.toString() !== currentUserId;
 
                       user.removedFromManager = isNotTheSameUser ? (user.removedFromManager || false) : false;
                       user.businesses = user.businesses || [];
                       user.currentBusinesses = user.currentBusinesses || [];
 
                       businessGroups.forEach((businessGroup) => {
-                        if (businessGroup.userId.toString() === user._id.toString()) {
-                          if (managedGroups.indexOf(businessGroup.groupId.toString()) >= 0) {
+                        if (businessGroup.userId === _userId) {
+                          if ((!user.invitedByMe || !user.removedFromManager) && managedGroups.indexOf(businessGroup.groupId) >= 0) {
                             user.invitedByMe = true;
                             user.removedFromManager = isNotTheSameUser ? businessGroup.removedFromManager || user.removedFromManager : false;
                           }
