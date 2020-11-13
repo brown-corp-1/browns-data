@@ -221,13 +221,10 @@ function getByData(userId, type, businessId, date, creationDate) {
           }
         },
         {
-          $lookup: businessLookup
-        },
-        {
-          $unwind: {path: '$business', preserveNullAndEmptyArrays: true}
-        },
-        {
-          $project: fields
+          $project: {
+            _id: 1,
+            lstImages: 1
+          }
         }
       ])
       .limit(1)
@@ -290,18 +287,12 @@ function remove(transactionIds) {
 function removeChildren(transactionIds) {
   transactionIds = util.parseToArray(transactionIds);
 
-  const queryCondition = {
-    $or: [
-      {
-        parentId: {$in: transactionIds}
-      }
-    ]
-  };
-
   return new Promise((resolve, reject) => {
     db.collection('transactions')
       .updateMany(
-        queryCondition,
+        {
+          parentId: {$in: transactionIds}
+        },
         {
           $set: {
             active: false
