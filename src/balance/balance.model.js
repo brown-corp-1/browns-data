@@ -1026,18 +1026,22 @@ function setBalances(userIds, groupId) {
   });
 }
 
-function setBalancesV2(userIds) {
+function setBalancesV2(businessId) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
       .aggregate([
+        {
+          $match: {
+            businessId,
+            admin: false,
+            active: true,
+          }
+        },
         {
           $project: {
             userId: 1,
             owner: 1,
             businessId: 1,
-            active: 1,
-            activeGroup: 1,
-            admin: 1,
             type: 1,
             date: 1,
             driverSaving: 1,
@@ -1046,21 +1050,6 @@ function setBalancesV2(userIds) {
         },
         {
           $sort: {date: -1}
-        },
-        {
-          $match: {
-            $or: [
-              {
-                owner: {$in: userIds}
-              },
-              {
-                userId: {$in: userIds},
-              }
-            ],
-            admin: false,
-            active: true,
-            activeGroup: true
-          }
         },
         {
           $group: {
@@ -1097,20 +1086,10 @@ function setBalancesV2(userIds) {
           return reject(err);
         }
 
-        // remove currrent balances
+        // remove current balances
         db.collection('balances')
           .removeMany({
-            $or: [
-              {
-                userId: {
-                  $in: userIds
-                }
-              }, {
-                owner: {
-                  $in: userIds
-                }
-              }
-            ]
+            businessId
           }, (removeErr) => {
             if (removeErr) {
               return reject(removeErr);
