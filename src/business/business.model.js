@@ -5,6 +5,7 @@ module.exports = {
   getBusinessWithOwners,
   getBusinessesWithOwners,
   getOwners,
+  getOwnersId,
   getBusinessesByOwner,
   getBusinessesInformation,
   remove,
@@ -301,6 +302,35 @@ function getOwners(id) {
               lastName: 1,
               photo: 1
             }
+          }
+        }
+      ])
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        if (result && result.length && result[0].owners) {
+          return resolve(result[0].owners);
+        }
+
+        return [];
+      });
+  });
+}
+
+function getOwnersId(id) {
+  return new Promise((resolve, reject) => {
+    db.collection('businesses')
+      .aggregate([
+        {
+          $match: {
+            _id: id
+          }
+        },
+        {
+          $project: {
+            owners: 1
           }
         }
       ])
