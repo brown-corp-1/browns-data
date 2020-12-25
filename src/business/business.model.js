@@ -8,10 +8,12 @@ module.exports = {
   getOwnersId,
   getBusinessesByOwner,
   getBusinessesInformation,
+  getLastDistance,
   remove,
   update,
   updateLastUpdate,
-  updateImage
+  updateImage,
+  updateAutomaticInfo
 };
 
 const Promise = require('promise');
@@ -57,6 +59,46 @@ function update(businessId, type, name, owners, drivers) {
   });
 }
 
+function getLastDistance(businessId) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $sort: {
+            date: -1,
+            creationDate: -1
+          }
+        },
+        {
+          $match: {
+            businessId,
+            admin: true,
+            active: true,
+            distance: {
+              $gt: 0
+            }
+          }
+        },
+        {
+          $project: {
+            distance: 1,
+            date: 1
+          }
+        }
+      ])
+      .limit(1)
+      .toArray((err, result) => {
+        let distance = 0;
+        
+        if (result && result[0]) {
+          distance = result[0].distance
+        }
+
+        return resolve(distance);
+      });
+  });
+}
+
 function updateLastUpdate(businessId) {
   return new Promise((resolve, reject) => {
     db.collection('businesses')
@@ -67,6 +109,30 @@ function updateLastUpdate(businessId) {
         {
           $set: {
             lastUpdate: new Date()
+          }
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
+function updateAutomaticInfo(businessId, data) {
+  return new Promise((resolve, reject) => {
+    db.collection('businesses')
+      .updateOne(
+        {
+          _id: businessId
+        },
+        {
+          $set: {
+            lastUpdate: data.lastUpdate,
+            distance: data.distance,
+            drivers: data.drivers,
+            managers: data.managers
           }
         },
         (err) => {
@@ -222,7 +288,10 @@ function getBusinessesWithOwners(businessIds) {
             photo: 1,
             active: 1,
             type: 1,
-            lastUpdate: 1
+            lastUpdate: 1,
+            distance: 1,
+            drivers: 1,
+            managers: 1
           }
         }
       ])
