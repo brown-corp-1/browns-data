@@ -8,6 +8,7 @@ module.exports = {
     STRANDED: 3,
     PEAK_AND_PLATE: 4,
     CASH_OUT: 5,
-    CASH_IN: 6
+    CASH_IN: 6,
+    ODOMETER: 7
   }
 };
