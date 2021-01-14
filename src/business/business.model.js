@@ -1,6 +1,7 @@
 module.exports = {
   active,
   add,
+  addDriver,
   get,
   getBusinessWithOwners,
   getBusinessesWithOwners,
@@ -59,6 +60,30 @@ function update(businessId, type, name, owners, drivers) {
   });
 }
 
+function addDriver(businessId, driver) {
+  return new Promise((resolve, reject) => {
+    db.collection('businesses')
+      .updateOne(
+        {
+          _id: businessId
+        },
+        {
+          $set: {
+            lastUpdate: new Date()
+          },
+          $addToSet: {
+            drivers: driver
+          }
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
 function getLastDistance(businessId) {
   return new Promise((resolve, reject) => {
     db.collection('transactions')
@@ -89,7 +114,7 @@ function getLastDistance(businessId) {
       .limit(1)
       .toArray((err, result) => {
         let distance = 0;
-        
+
         if (result && result[0]) {
           distance = result[0].distance
         }
@@ -130,9 +155,7 @@ function updateAutomaticInfo(businessId, data) {
         {
           $set: {
             lastUpdate: data.lastUpdate,
-            distance: data.distance,
-            drivers: data.drivers,
-            managers: data.managers
+            distance: data.distance
           }
         },
         (err) => {
@@ -254,6 +277,8 @@ function getBusinessWithOwners(id) {
             photo: 1,
             owners: 1,
             type: 1,
+            drivers: 1,
+            managers: 1,
             lastUpdate: 1
           }
         }
@@ -290,7 +315,6 @@ function getBusinessesWithOwners(businessIds) {
             type: 1,
             lastUpdate: 1,
             distance: 1,
-            drivers: 1,
             managers: 1
           }
         }
