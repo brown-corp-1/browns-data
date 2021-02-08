@@ -34,6 +34,7 @@ const fields = {
   _id: 1,
   owner: 1,
   admin: 1,
+  userId: 1,
   type: 1,
   date: 1,
   creationDate: 1,
