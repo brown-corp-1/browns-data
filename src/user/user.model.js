@@ -331,6 +331,7 @@ function getUsersInformation(ids) {
           photo: 1,
           email: 1,
           phone: 1,
+          culture: 1,
           resetPassword: 1,
           notificationToken: 1
         })
@@ -344,7 +345,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId) {
+function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
   return new Promise((resolve, reject) => {
     let data = {};
     let arrayData = {
@@ -358,6 +359,10 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
       data.lastName = lastName;
     }
 
+    if (culture) {
+      data.culture = culture;
+    }
+    
     if (password) {
       data.password = password;
     }
@@ -585,11 +590,12 @@ function cleanResetPasswordToken() {
   });
 }
 
-function updateLoginInfo(userId, notificationToken) {
+function updateLoginInfo(userId, notificationToken, culture) {
   return new Promise((resolve, reject) => {
     let data = {
       lastLogin: new Date(),
-      hasLoggedIn: true
+      hasLoggedIn: true,
+      culture
     };
 
     if (notificationToken) {
