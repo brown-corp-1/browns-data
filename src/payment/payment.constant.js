@@ -14,6 +14,14 @@ const products = [
     limits: {
       transactions: 1000
     }
+  },
+  {
+    productId: 'premium_year',
+    name: 'payment_product_premium_year',
+    isPremium: true,
+    limits: {
+      transactions: 1000
+    }
   }
 ];
 

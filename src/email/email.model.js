@@ -48,7 +48,7 @@ function getUnsent() {
           currencyCode: 1,
           timeOffset: 1
         })
-      .limit(100)
+      .limit(500)
       .toArray((err, result) => {
         if (err) {
           return reject(err);
