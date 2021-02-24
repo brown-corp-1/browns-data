@@ -5,6 +5,7 @@ module.exports = {
   },
   add,
   addMany,
+  countTransactionsPerMonth,
   get,
   getLastDistance,
   getRecord,
@@ -160,6 +161,38 @@ function getRecord(transactionId) {
           return reject(err);
         }
         return resolve(result[0]);
+      });
+  });
+}
+
+function countTransactionsPerMonth(userId, startDate, endDate) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: {
+            userId,
+            active: true,
+            admin: true,
+            creationDate: {
+              $gte: startDate,
+              $lte: endDate
+            }
+          }
+        },
+        {
+          $count: 'transactionsPerMonth'
+        }
+      ])
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        const count = result.length ? result[0].transactionsPerMonth : 0;
+
+        return resolve(count);
       });
   });
 }

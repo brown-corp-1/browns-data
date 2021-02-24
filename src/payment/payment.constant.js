@@ -4,7 +4,7 @@ const products = [
     name: 'payment_product_free',
     isPremium: false,
     limits: {
-      transactions: 100
+      transactions: 30
     }
   },
   {
@@ -12,7 +12,7 @@ const products = [
     name: 'payment_product_premium',
     isPremium: true,
     limits: {
-      transactions: 1000
+      transactions: 100000
     }
   },
   {
@@ -20,7 +20,7 @@ const products = [
     name: 'payment_product_premium_year',
     isPremium: true,
     limits: {
-      transactions: 1000
+      transactions: 100000
     }
   }
 ];
