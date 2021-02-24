@@ -189,7 +189,10 @@ function countTransactionsPerMonth(userId, startDate, endDate) {
         if (err) {
           return reject(err);
         }
-        return resolve(result[0].transactionsPerMonth);
+
+        const count = result.length ? result[0].transactionsPerMonth : 0;
+
+        return resolve(count);
       });
   });
 }
