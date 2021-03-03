@@ -16,8 +16,10 @@
     "nodemailer": "4.7.0",
     "promise": "8.0.3",
     "saslprep": "1.0.3",
-    "sharp": "0.27.2",
     "uuid": "3.3.3"
+  },
+  "peerDependencies": {
+    "sharp": "0.27.2"
   },
   "devDependencies": {
     "eslint": "^4.8.0",
