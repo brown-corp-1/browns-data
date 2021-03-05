@@ -624,12 +624,13 @@ function updateLoginInfo(userId, notificationToken, culture) {
   });
 }
 
-function unassignNotificationToken(notificationToken) {
+function unassignNotificationToken(notificationToken, flavor) {
   return new Promise((resolve, reject) => {
     if (notificationToken) {
       db.collection('users')
         .updateMany(
           {
+            flavor,
             notificationToken
           },
           {
