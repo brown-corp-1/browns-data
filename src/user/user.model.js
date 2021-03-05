@@ -207,7 +207,7 @@ function getByGoogleId(googleId) {
 function exist(email, phone, flavor) {
   return new Promise((resolve, reject) => {
     if (!email && !phone) {
-      resolve();
+      return resolve();
     }
 
     let match = {
@@ -627,7 +627,7 @@ function updateLoginInfo(userId, notificationToken, culture) {
 function unassignNotificationToken(notificationToken, flavor) {
   return new Promise((resolve, reject) => {
     if (notificationToken) {
-      db.collection('users')
+      return db.collection('users')
         .updateMany(
           {
             flavor,
