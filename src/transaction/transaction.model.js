@@ -634,9 +634,9 @@ function getUserBalancePerMonthV2(businessId, userId, admin) {
           return reject(err);
         }
 
-        balances.mine = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceMine), 'balanceMine');
-        balances.haveToOthers = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceHaveToOthers), 'balanceHaveToOthers');
-        balances.othersHave = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceOthersHave), 'balanceOthersHave');
+        balances.mine = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceMine), 'balanceMine');
+        balances.haveToOthers = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceHaveToOthers), 'balanceHaveToOthers');
+        balances.othersHave = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceOthersHave), 'balanceOthersHave');
 
         return resolve(balances);
       });
@@ -858,5 +858,5 @@ function _normalizedDescription(transaction) {
     }
   }
 
-  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}`;
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}|${transaction.driverSaving || ''}|${((transaction.value || 0) + (transaction.driverSaving || 0)) || ''}`;
 }
