@@ -5,6 +5,7 @@ module.exports = {
   },
   add,
   addMany,
+  countTransactionsPerMonth,
   get,
   getLastDistance,
   getRecord,
@@ -160,6 +161,38 @@ function getRecord(transactionId) {
           return reject(err);
         }
         return resolve(result[0]);
+      });
+  });
+}
+
+function countTransactionsPerMonth(userId, startDate, endDate) {
+  return new Promise((resolve, reject) => {
+    db.collection('transactions')
+      .aggregate([
+        {
+          $match: {
+            userId,
+            active: true,
+            admin: true,
+            creationDate: {
+              $gte: startDate,
+              $lte: endDate
+            }
+          }
+        },
+        {
+          $count: 'transactionsPerMonth'
+        }
+      ])
+      .limit(1)
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        const count = result.length ? result[0].transactionsPerMonth : 0;
+
+        return resolve(count);
       });
   });
 }
@@ -601,9 +634,9 @@ function getUserBalancePerMonthV2(businessId, userId, admin) {
           return reject(err);
         }
 
-        balances.mine = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceMine), 'balanceMine');
-        balances.haveToOthers = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceHaveToOthers), 'balanceHaveToOthers');
-        balances.othersHave = util.consolidateMontlyBalancesV2(_.filter(result, (r)=> !!r.balanceOthersHave), 'balanceOthersHave');
+        balances.mine = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceMine), 'balanceMine');
+        balances.haveToOthers = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceHaveToOthers), 'balanceHaveToOthers');
+        balances.othersHave = util.consolidateMontlyBalancesV2(_.filter(result, (r) => !!r.balanceOthersHave), 'balanceOthersHave');
 
         return resolve(balances);
       });
@@ -825,5 +858,5 @@ function _normalizedDescription(transaction) {
     }
   }
 
-  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}`;
+  return `${util.removeAccents(transaction.description || '')}|${transaction.distance || ''}|${transaction.value || ''}|${transactionType || ''}|${transaction.driverSaving || ''}|${((transaction.value || 0) + (transaction.driverSaving || 0)) || ''}`;
 }

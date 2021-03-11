@@ -90,12 +90,13 @@ function getByEmail(email) {
   });
 }
 
-function getByEmailOrPhone(email, phone) {
+function getByEmailOrPhone(email, phone, flavor) {
   return new Promise((resolve, reject) => {
     let match = {
+      flavor,
       $or: []
     };
-
+    
     if (!email && !phone) {
       return reject();
     }
@@ -203,13 +204,14 @@ function getByGoogleId(googleId) {
   });
 }
 
-function exist(email, phone) {
+function exist(email, phone, flavor) {
   return new Promise((resolve, reject) => {
     if (!email && !phone) {
-      resolve();
+      return resolve();
     }
 
     let match = {
+      flavor,
       $or: []
     };
 
@@ -242,10 +244,11 @@ function exist(email, phone) {
   });
 }
 
-function login(userId, password) {
+function login(userId, password, flavor) {
   return new Promise((resolve, reject) => {
     db.collection('users')
       .find({
+        flavor,
         $or: [
           {email: userId},
           {phone: userId}
@@ -332,6 +335,7 @@ function getUsersInformation(ids) {
           email: 1,
           phone: 1,
           culture: 1,
+          flavor: 1,
           resetPassword: 1,
           notificationToken: 1
         })
@@ -620,12 +624,13 @@ function updateLoginInfo(userId, notificationToken, culture) {
   });
 }
 
-function unassignNotificationToken(notificationToken) {
+function unassignNotificationToken(notificationToken, flavor) {
   return new Promise((resolve, reject) => {
     if (notificationToken) {
-      db.collection('users')
+      return db.collection('users')
         .updateMany(
           {
+            flavor,
             notificationToken
           },
           {
