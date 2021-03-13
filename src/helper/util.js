@@ -535,12 +535,11 @@ function _saveRenditions(filename, renditions) {
       const renditionFile = filename.replace('.png', '_' + width + '_' + height + '.png');
 
       sharp(filename)
-        .resize(width, height)
-        .max()
-        .crop(sharp.strategy.attention)
-        .withoutEnlargement()
+        .resize(width, height, {
+          withoutEnlargement: true
+        })
         .jpeg({
-          quality: 95,
+          quality: 96,
           chromaSubsampling: '4:4:4'
         })
         .toFile(renditionFile)
