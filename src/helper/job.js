@@ -20,7 +20,7 @@ function init() {
   createIndexes();
 
   setInterval(() => {
-    if (new Date().getHours() === 6) {
+    if (new Date().getHours() === 6 || new Date().getHours() === 12 || new Date().getHours() === 22) {
       makeBackupNew();
     }
   }, 3600000); // an hour
