@@ -14,6 +14,8 @@ module.exports = {
     ODOMETER: 7,
     INVITE: 101,
     RESET_PASSWORD: 201,
-    WELCOME: 301
+    WELCOME: 301,
+    WELCOME_PREMIUM: 401,
+    TRANSACTION: 501
   }
 };
