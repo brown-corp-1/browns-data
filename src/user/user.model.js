@@ -337,7 +337,7 @@ function getUsersInformation(ids) {
           culture: 1,
           flavor: 1,
           resetPassword: 1,
-          notificationTokens: 1,
+          notificationTokens: 1
         })
       .toArray((err, result) => {
         if (err) {
