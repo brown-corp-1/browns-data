@@ -96,7 +96,7 @@ function getByEmailOrPhone(email, phone, flavor) {
       flavor,
       $or: []
     };
-    
+
     if (!email && !phone) {
       return reject();
     }
@@ -337,7 +337,7 @@ function getUsersInformation(ids) {
           culture: 1,
           flavor: 1,
           resetPassword: 1,
-          notificationToken: 1
+          notificationTokens: 1
         })
       .toArray((err, result) => {
         if (err) {
@@ -366,7 +366,7 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
     if (culture) {
       data.culture = culture;
     }
-    
+
     if (password) {
       data.password = password;
     }
@@ -601,9 +601,14 @@ function updateLoginInfo(userId, notificationToken, culture) {
       hasLoggedIn: true,
       culture
     };
+    let setter = {
+      $set: data
+    };
 
     if (notificationToken) {
-      data.notificationToken = notificationToken;
+      setter.$addToSet = {
+        notificationTokens: notificationToken
+      };
     }
 
     db.collection('users')
@@ -611,9 +616,7 @@ function updateLoginInfo(userId, notificationToken, culture) {
         {
           _id: userId
         },
-        {
-          $set: data
-        },
+        setter,
         (err, result) => {
           if (err) {
             return reject(err);
@@ -631,11 +634,13 @@ function unassignNotificationToken(notificationToken, flavor) {
         .updateMany(
           {
             flavor,
-            notificationToken
+            notificationTokens: {
+              $in: [notificationToken]
+            }
           },
           {
-            $set: {
-              notificationToken: ''
+            $pull: {
+              notificationTokens: notificationToken
             }
           },
           (err, result) => {
