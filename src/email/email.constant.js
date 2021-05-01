@@ -16,6 +16,7 @@ module.exports = {
     RESET_PASSWORD: 201,
     WELCOME: 301,
     WELCOME_PREMIUM: 401,
-    TRANSACTION: 501
+    TRANSACTION: 501,
+    ALARM: 601
   }
 };
