@@ -1,7 +1,10 @@
 module.exports = {
   add,
+  addNotification,
   find,
   findByBusinessId,
+  findBusinessAlarms,
+  getAlarmsInformation,
   remove,
   update
 };
@@ -25,10 +28,12 @@ function add(alarm) {
 function update(alarm) {
   return new Promise((resolve, reject) => {
     const newAlarm = {
-      name: document.name,
-      pages: document.pages,
-      lastUpdate: document.lastUpdate,
-      active: document.active
+      name: alarm.name,
+      value: alarm.value,
+      startOdometer: alarm.startOdometer,
+      odometerPeriod: alarm.odometerPeriod,
+      isRecurring: alarm.isRecurring,
+      nextOdometerNotification: alarm.nextOdometerNotification
     };
 
     db.collection('alarms')
@@ -73,6 +78,83 @@ function remove(alarm) {
   });
 }
 
+function addNotification(alarm, notification) {
+  return new Promise((resolve, reject) => {
+    db.collection('alarms')
+      .updateOne(
+        {
+          _id: alarm._id,
+          createdBy: alarm.createdBy,
+          businessId: alarm.businessId
+        },
+        {
+          $addToSet: {
+            notifications: notification
+          }
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
+function findBusinessAlarms(businessId) {
+  return new Promise((resolve, reject) => {
+    let match = {
+      active: true
+    };
+
+    if (businessId) {
+      match._id = businessId;
+    }
+
+    db.collection('businesses')
+      .aggregate(
+        [
+          {
+            $match: match
+          },
+          {
+            $lookup:
+              {
+                from: 'alarms',
+                let: {businessId: '$_id'},
+                pipeline: [
+                  {
+                    $match:
+                      {
+                        $expr:
+                          {
+                            $and:
+                              [
+                                {$eq: ['$businessId', '$$businessId']},
+                                {$eq: ['$active', true]}
+                              ]
+                          }
+                      }
+                  }
+                ],
+                as: 'alarm'
+              }
+          },
+          {
+            $unwind: {path: '$alarm', preserveNullAndEmptyArrays: false}
+          }
+        ]
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
 function find(userId) {
   return new Promise((resolve, reject) => {
     db.collection('alarms')
@@ -99,6 +181,24 @@ function findByBusinessId(businessId) {
         {
           businessId,
           active: true
+        }
+      )
+      .toArray((err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result);
+      });
+  });
+}
+
+function getAlarmsInformation(ids) {
+  return new Promise((resolve, reject) => {
+    db.collection('alarms')
+      .find(
+        {
+          _id: {$in: ids}
         }
       )
       .toArray((err, result) => {

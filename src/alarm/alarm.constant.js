@@ -1,8 +1,8 @@
 module.exports = {
-  notificationType: {
+  notificationAdvance: {
     percentage0: '0%',
-    percentage10: '10%',
-    percentage20: '20%',
+    percentage05: '5%',
+    percentage15: '15%',
     percentage30: '30%'
   }
 };
