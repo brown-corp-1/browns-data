@@ -206,15 +206,10 @@ function getSpeed(businessId) {
           const firstDistance = result[result.length - 1];
           const distanceDelta = lastDistance.distance - firstDistance.distance;
           const dateDelta = lastDistance.date - firstDistance.date;
-          const speedInMilliseconds = distanceDelta / dateDelta
-          const speedInDays = 86400000 * speedInMilliseconds;
-          const speedInMinutes = 1440000 * speedInMilliseconds;
+          const speedInMinutes = distanceDelta / 1440;
 
-          if (dateDelta > 0 && distanceDelta > 0 && speedInDays < 5000) {
-            return resolve({
-              day: speedInDays,
-              minute: speedInMinutes
-            });
+          if (dateDelta > 0 && distanceDelta > 0) {
+            return resolve(speedInMinutes);
           }
         }
 
@@ -255,6 +250,7 @@ function updateAutomaticInfo(businessId, data) {
           $set: {
             lastUpdate: data.lastUpdate,
             distance: data.distance,
+            speed: data.speed,
             lastOdometerDate: data.lastOdometerDate
           }
         },
@@ -410,15 +406,17 @@ function getBusinessesWithOwners(businessIds) {
         },
         {
           $project: {
+            active: 1,
+            distance: 1,
+            drivers: 1,
+            lastUpdate: 1,
+            lastOdometerDate: 1,
+            managers: 1,
             name: 1,
             owners: 1,
-            drivers: 1,
             photo: 1,
-            active: 1,
-            type: 1,
-            lastUpdate: 1,
-            distance: 1,
-            managers: 1
+            speed: 1,
+            type: 1
           }
         }
       ])
