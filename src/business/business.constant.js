@@ -4,8 +4,5 @@ module.exports = {
     PERSONAL: 2
   },
   defaultBusiness: 'Mis Finanzas',
-  speed: {
-    day: 130,
-    minute: 0.0902777777777778
-  }
+  speed: 0.0902777777777778
 };
