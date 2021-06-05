@@ -63,6 +63,7 @@ function createIndexes() {
     db.collection('tokens').createIndex({userId: 1});
     db.collection('emails').createIndex({sent: 1});
     db.collection('alarms').createIndex({createdBy: 1, active: 1});
+    db.collection('alarms').createIndex({businessId: 1});
   } catch (e) {
     logger.info('error creating indexes', e);
   }
