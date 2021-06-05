@@ -6,6 +6,7 @@ module.exports = {
   findBusinessAlarms,
   getAlarmsInformation,
   remove,
+  removeNotifications,
   update
 };
 
@@ -68,6 +69,34 @@ function remove(alarm) {
           $set: {
             active: false
           }
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(true);
+        });
+  });
+}
+
+function removeNotifications(alarm, value) {
+  return new Promise((resolve, reject) => {
+    db.collection('alarms')
+      .updateOne(
+        {
+          _id: alarm._id,
+          createdBy: alarm.createdBy,
+          businessId: alarm.businessId
+        },
+        {
+          $pull:
+            {
+              notifications: {
+                value: {
+                  $gte: value
+                }
+              }
+            }
         },
         (err) => {
           if (err) {
