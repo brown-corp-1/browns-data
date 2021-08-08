@@ -1,4 +1,8 @@
 module.exports = {
+  types: {
+    odometer: 'odometer',
+    time: 'time'
+  },
   notificationAdvance: {
     percentage0: 0,
     percentage05: 5,

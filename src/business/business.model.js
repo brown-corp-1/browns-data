@@ -205,8 +205,8 @@ function getSpeed(businessId) {
           const lastDistance = result[0];
           const firstDistance = result[result.length - 1];
           const distanceDelta = lastDistance.distance - firstDistance.distance;
-          const dateDelta = lastDistance.date - firstDistance.date;
-          const speedInMinutes = distanceDelta / 1440;
+          const dateDelta = (lastDistance.date - firstDistance.date) / 60000;
+          const speedInMinutes = distanceDelta / dateDelta;
 
           if (dateDelta > 0 && distanceDelta > 0) {
             return resolve(speedInMinutes);

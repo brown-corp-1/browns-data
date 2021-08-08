@@ -11,6 +11,7 @@ module.exports = {
 };
 
 const Promise = require('promise');
+const _ = require('lodash');
 
 function add(alarm) {
   return new Promise((resolve, reject) => {
@@ -28,14 +29,17 @@ function add(alarm) {
 
 function update(alarm) {
   return new Promise((resolve, reject) => {
-    const newAlarm = {
-      name: alarm.name,
-      value: alarm.value,
-      startOdometer: alarm.startOdometer,
-      odometerPeriod: alarm.odometerPeriod,
-      isRecurring: alarm.isRecurring,
-      nextOdometerNotification: alarm.nextOdometerNotification
-    };
+    const newAlarm = _.pick(alarm, [
+      'name',
+      'value',
+      'startOdometer',
+      'odometerPeriod',
+      'isRecurring',
+      'nextOdometerNotification',
+      'startTime',
+      'timePeriod',
+      'nextTimeNotification'
+    ]);
 
     db.collection('alarms')
       .updateOne(
