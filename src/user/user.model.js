@@ -38,6 +38,7 @@ function get(userId) {
             email: 1,
             phone: 1,
             photo: 1,
+            country: 1,
             spotlights: 1,
             hasLoggedIn: 1,
             plan: 1
@@ -260,6 +261,7 @@ function login(userId, password, flavor) {
         lastName: 1,
         email: 1,
         phone: 1,
+        country: 1,
         photo: 1,
         spotlights: 1,
         hasLoggedIn: 1
@@ -300,6 +302,7 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           phone: 1,
+          country: 1,
           password: 1,
           spotlights: 1,
           facebookId: 1,
@@ -334,6 +337,7 @@ function getUsersInformation(ids) {
           photo: 1,
           email: 1,
           phone: 1,
+          country: 1,
           culture: 1,
           flavor: 1,
           resetPassword: 1,
@@ -349,7 +353,7 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
+function update(userId, firstName, lastName, country, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
   return new Promise((resolve, reject) => {
     let data = {};
     let arrayData = {
@@ -373,6 +377,10 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
 
     if (photo) {
       data.photo = photo;
+    }
+
+    if (country) {
+      data.country = country;
     }
 
     if (googlePhoto) {
