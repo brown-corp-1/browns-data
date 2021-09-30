@@ -129,7 +129,7 @@ function restoreBackupNew(filename, callback) {
       makeBackupNew(true, () => {
         logger.info('dropping database');
         db.dropDatabase(() => {
-          logger.info('restoring');
+          logger.info('restoring', runRestore);
           exec(runRestore, {cwd: config.brownsData.mongoFolder}, () => {
             logger.info('restore was done');
 

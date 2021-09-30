@@ -38,6 +38,7 @@ function get(userId) {
             email: 1,
             phone: 1,
             photo: 1,
+            country: 1,
             spotlights: 1,
             hasLoggedIn: 1,
             plan: 1
@@ -260,6 +261,7 @@ function login(userId, password, flavor) {
         lastName: 1,
         email: 1,
         phone: 1,
+        country: 1,
         photo: 1,
         spotlights: 1,
         hasLoggedIn: 1
@@ -300,6 +302,7 @@ function getInvite(userId) {
           lastName: 1,
           email: 1,
           phone: 1,
+          country: 1,
           password: 1,
           spotlights: 1,
           facebookId: 1,
@@ -334,6 +337,7 @@ function getUsersInformation(ids) {
           photo: 1,
           email: 1,
           phone: 1,
+          country: 1,
           culture: 1,
           flavor: 1,
           resetPassword: 1,
@@ -349,14 +353,11 @@ function getUsersInformation(ids) {
   });
 }
 
-function update(userId, firstName, lastName, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
+function update(userId, firstName, lastName, country, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
   return new Promise((resolve, reject) => {
     let data = {};
-    let arrayData = {
-      photos: {
-        $each: photos
-      }
-    };
+    let arrayData = {};
+    let updateQuery = {};
 
     if (firstName || lastName) {
       data.firstName = firstName;
@@ -375,12 +376,24 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
       data.photo = photo;
     }
 
+    if (country) {
+      data.country = country;
+    }
+
     if (googlePhoto) {
       data.googlePhoto = googlePhoto;
     }
 
     if (facebookPhoto) {
       data.facebookPhoto = facebookPhoto;
+    }
+
+    if (photos && photos.length) {
+      arrayData = {
+        photos: {
+          $each: photos
+        }
+      };
     }
 
     if (googleId) {
@@ -395,15 +408,18 @@ function update(userId, firstName, lastName, password, photo, photos, googlePhot
       };
     }
 
+    updateQuery.$set = data;
+
+    if (Object.keys(arrayData).length) {
+      updateQuery.$addToSet = arrayData;
+    }
+
     db.collection('users')
       .updateOne(
         {
           _id: userId
         },
-        {
-          $set: data,
-          $addToSet: arrayData
-        },
+        updateQuery,
         (err) => {
           if (err) {
             return reject(err);
