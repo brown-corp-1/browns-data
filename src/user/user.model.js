@@ -356,11 +356,8 @@ function getUsersInformation(ids) {
 function update(userId, firstName, lastName, country, password, photo, photos, googlePhoto, facebookPhoto, googleId, facebookId, culture) {
   return new Promise((resolve, reject) => {
     let data = {};
-    let arrayData = {
-      photos: {
-        $each: photos
-      }
-    };
+    let arrayData = {};
+    let updateQuery = {};
 
     if (firstName || lastName) {
       data.firstName = firstName;
@@ -391,6 +388,14 @@ function update(userId, firstName, lastName, country, password, photo, photos, g
       data.facebookPhoto = facebookPhoto;
     }
 
+    if (photos && photos.length) {
+      arrayData = {
+        photos: {
+          $each: photos
+        }
+      };
+    }
+
     if (googleId) {
       arrayData = {
         googleId
@@ -403,15 +408,18 @@ function update(userId, firstName, lastName, country, password, photo, photos, g
       };
     }
 
+    updateQuery.$set = data;
+
+    if (Object.keys(arrayData).length) {
+      updateQuery.$addToSet = arrayData;
+    }
+
     db.collection('users')
       .updateOne(
         {
           _id: userId
         },
-        {
-          $set: data,
-          $addToSet: arrayData
-        },
+        updateQuery,
         (err) => {
           if (err) {
             return reject(err);
