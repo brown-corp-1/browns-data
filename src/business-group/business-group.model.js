@@ -336,6 +336,7 @@ function findUsers(userId) {
                     lastName: 1,
                     photo: 1,
                     phone: 1,
+                    country: 1,
                     email: 1,
                     hasLoggedIn: 1
                   }
