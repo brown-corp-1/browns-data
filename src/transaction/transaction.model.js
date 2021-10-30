@@ -15,6 +15,7 @@ module.exports = {
   getUserBalancePerMonth,
   getUserBalancePerDay,
   getTree,
+  list,
   update,
   remove,
   removeChildren
@@ -163,6 +164,22 @@ function getRecord(transactionId) {
         return resolve(result[0]);
       });
   });
+}
+
+function list(userId, businessId, admin) {
+  return db.collection('transactions')
+    .aggregate([
+      {
+        $match: _getFilters(businessId, userId, admin)
+      },
+      {
+        $sort: {date: -1, creationDate: -1}
+      },
+      {
+        $project: fields
+      }
+    ])
+    .toArray();
 }
 
 function countTransactionsPerMonth(userId, startDate, endDate) {
