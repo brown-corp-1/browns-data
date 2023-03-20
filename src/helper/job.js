@@ -20,7 +20,7 @@ function init() {
   createIndexes();
 
   setInterval(() => {
-    if (new Date().getHours() === 6 || new Date().getHours() === 12 || new Date().getHours() === 22) {
+    if (new Date().getHours() === 22) {
       makeBackupNew();
     }
   }, 3600000); // an hour
@@ -199,6 +199,10 @@ function restoreBackup(dir, filename, callback) {
 }
 
 function _getConnectionString() {
+  if (config.brownsData.mongoUri) {
+    return '--uri ' + config.brownsData.mongoUri + ' --db ' + config.brownsData.database;
+  }
+
   return '--host ' + config.brownsData.host +
     ' --db ' + config.brownsData.database +
     ' --port ' + config.brownsData.port +

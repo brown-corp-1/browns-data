@@ -62,7 +62,6 @@ function init(config) {
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      poolSize: 20
     };
 
     MongoClient.connect(config.brownsData.db, options, (err, client) => {
