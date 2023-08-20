@@ -59,7 +59,8 @@ function getPlan(userId) {
     db.collection('users')
       .find(
         {
-          _id: userId
+          _id: userId,
+          'plan.dueDate': { $gt: new Date()}
         },
         {
           projection: {
@@ -73,7 +74,11 @@ function getPlan(userId) {
           return reject(err);
         }
 
-        return resolve(result[0].plan);
+        if(result && result.length) {
+          return resolve(result[0].plan);
+        }
+
+        return null;
       });
   });
 }
